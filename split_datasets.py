@@ -2,8 +2,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 parquet_files = [
-    "../datasets/merged_1.parquet",
-    "../datasets/merged_2.parquet"
+    "datasets/merged_1.parquet",
+    "datasets/merged_2.parquet"
 ]
 
 for file in parquet_files:
