@@ -45,14 +45,14 @@ class NeuralNetwork:
 
     def forward_propagation(self, X, training):
         output = X
-        ## COMPLETE
-        ## for ...
+        for layer in self.layers:
+            output = layer.forward(output, training)
         return output
 
     def backward_propagation(self, output_error):
         error = output_error
-        ## COMPLETE
-        ## for ...
+        for layer in reversed(self.layers):
+            error = layer.backward(error)
         return error
 
     def fit(self, dataset):
