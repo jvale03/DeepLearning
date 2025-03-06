@@ -2,9 +2,7 @@ import numpy as np
 
 
 def accuracy(y_true, y_pred):
- 
-    # deal with predictions like [[0.52], [0.91], ...] and [[0.3, 0.7], [0.6, 0.4], ...]
-    # they need to be in the same format: [0, 1, ...] and [1, 0, ...]
+
     def correct_format(y):
         if len(y[0]) == 1:
             corrected_y = [np.round(y[i][0]) for i in range(len(y))]
@@ -24,3 +22,11 @@ def mse(y_true, y_pred):
 
 def mse_derivative(y_true, y_pred):
     return 2 * np.sum(y_true - y_pred) / len(y_true)
+
+def binary_crossentropy(y_true, y_pred):
+    y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15) 
+    return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+
+def binary_crossentropy_derivative(y_true, y_pred):
+    y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
+    return (y_pred - y_true) / (y_pred * (1 - y_pred)) / len(y_true)
