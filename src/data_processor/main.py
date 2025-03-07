@@ -16,7 +16,7 @@ def executarScripts():
         print(result.stdout)
         
         if result.returncode != 0:
-            print(f"Erro ao executar {script}:\n{result}")
+            print(f"Erro ao executar {script}:\n{result.stderr}")
             break
 
 
