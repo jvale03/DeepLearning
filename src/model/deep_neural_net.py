@@ -135,24 +135,22 @@ if __name__ == '__main__':
     train_data = read_parquet('../../datasets/train/train_sample_processed.parquet')
     test_data = read_parquet('../../datasets/test/test_sample_processed.parquet')
 
-    net = DeepNeuralNetwork(epochs=100, batch_size=16, learning_rate=0.005, verbose=True,
+    net = DeepNeuralNetwork(epochs=20, batch_size=32, learning_rate=0.05, verbose=True,
                             loss=BinaryCrossEntropy, metric=accuracy)
 
     n_features = train_data.X.shape[1]
-    net.add(EmbeddingLayer(vocab_size=5000, embedding_dim=16, input_shape=(n_features,)))
-    net.add(GlobalAveragePoolingLayer())
 
-    net.add(DenseLayer(16))  
+    net.add(DenseLayer(16, input_shape=(n_features,)))  
     net.add(BatchNormalizationLayer())  
     net.add(ReLUActivation())  
     net.add(DropoutLayer(dropout_rate=0.2))  
 
-    net.add(DenseLayer(8, l2=0.005))  
-    net.add(BatchNormalizationLayer())  
+    net.add(DenseLayer(8, l2=0.001))  
     net.add(ReLUActivation())  
-    net.add(DropoutLayer(dropout_rate=0.3))  
+    net.add(DropoutLayer(dropout_rate=0.2))  
 
-    net.add(DenseLayer(1, l2=0.01))  
+
+    net.add(DenseLayer(1))  
     net.add(SigmoidActivation())
 
     net.fit(train_data, validation_data=test_data, patience=10)

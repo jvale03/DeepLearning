@@ -43,7 +43,7 @@ with open(corpus_file, "w", encoding="utf-8") as f:
 custom_tokenizer = BertWordPieceTokenizer(lowercase=True)
 custom_tokenizer.train(
     files=[corpus_file],
-    vocab_size=10000,
+    vocab_size=5000,
     min_frequency=2,
     show_progress=True,
     special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
@@ -64,7 +64,7 @@ def process_texts(texts):
         texts,
         padding="max_length",
         truncation=True,
-        max_length=128,
+        max_length=64,
     )["input_ids"]
     return tokenized
 
