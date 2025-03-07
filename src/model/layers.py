@@ -213,3 +213,31 @@ class BatchNormalizationLayer(Layer):
     
     def parameters(self):
         return np.prod(self.gamma.shape) + np.prod(self.beta.shape)
+
+
+class GlobalAveragePoolingLayer(Layer):
+    def __init__(self):
+        super().__init__()
+
+    def forward_propagation(self, inputs, training=True):
+        self.input = inputs
+        # Faz a média ao longo do axis 1 (normalmente a dimensão da sequência)
+        self.output = np.mean(inputs, axis=1)
+        return self.output
+
+    def backward_propagation(self, output_error):
+        # O gradiente de cada elemento é dividido igualmente pelo tamanho da sequência
+        seq_len = self.input.shape[1]
+        # Expande a dimensão para repartir o erro de forma uniforme
+        return np.repeat(output_error[:, np.newaxis, :], seq_len, axis=1) / seq_len
+
+    def output_shape(self):
+        if self._input_shape is None:
+            raise ValueError("Input shape não definida para GlobalAveragePoolingLayer.")
+        if len(self._input_shape) < 2:
+            raise ValueError("GlobalAveragePoolingLayer requer uma entrada com pelo menos 2 dimensões.")
+        # Se a input_shape for (seq_len, features), a saída será (features,)
+        return self._input_shape[1:]
+
+    def parameters(self):
+        return 0

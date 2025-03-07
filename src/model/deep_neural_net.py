@@ -1,5 +1,5 @@
 import numpy as np
-from layers import DenseLayer, EmbeddingLayer, FlattenLayer, DropoutLayer, BatchNormalizationLayer
+from layers import DenseLayer, EmbeddingLayer, FlattenLayer, DropoutLayer, BatchNormalizationLayer, GlobalAveragePoolingLayer
 from losses import BinaryCrossEntropy
 from optimizer import Optimizer
 from metrics import accuracy
@@ -64,23 +64,21 @@ class DeepNeuralNetwork:
         patience_counter = 0
         best_weights = None
 
-        output_x_all = np.zeros((X.shape[0], 1))
-        y_all = np.zeros((X.shape[0], 1))
 
         for epoch in range(1, self.epochs + 1):
-            idx = 0
+            train_loss, train_metric = 0, 0
+            batch_count = 0
             for X_batch, y_batch in self.get_mini_batches(X, y):
                 output = self.forward_propagation(X_batch, training=True)
                 error = self.loss.derivative(y_batch, output)
                 self.backward_propagation(error)
                 
-                batch_size = len(y_batch)
-                output_x_all[idx:idx + batch_size] = output
-                y_all[idx:idx + batch_size] = y_batch
-                idx += batch_size
+                train_loss += self.loss.loss(y_batch, output)
+                train_metric += self.metric(y_batch, output)
+                batch_count += 1
 
-            train_loss = self.loss.loss(y_all, output_x_all)
-            train_metric = self.metric(y_all, output_x_all)
+            train_loss /= batch_count
+            train_metric /= batch_count
 
             self.history['train_loss'].append(train_loss)
             self.history['train_metric'].append(train_metric)
@@ -137,28 +135,27 @@ if __name__ == '__main__':
     train_data = read_parquet('../../datasets/train/train_sample_processed.parquet')
     test_data = read_parquet('../../datasets/test/test_sample_processed.parquet')
 
-    net = DeepNeuralNetwork(epochs=20, batch_size=32, learning_rate=0.005, verbose=True,
+    net = DeepNeuralNetwork(epochs=100, batch_size=16, learning_rate=0.005, verbose=True,
                             loss=BinaryCrossEntropy, metric=accuracy)
 
     n_features = train_data.X.shape[1]
-    net.add(EmbeddingLayer(vocab_size=10000, embedding_dim=16, input_shape=(n_features,)))
-    net.add(DropoutLayer(dropout_rate=0.3))
-    net.add(FlattenLayer())
+    net.add(EmbeddingLayer(vocab_size=5000, embedding_dim=16, input_shape=(n_features,)))
+    net.add(GlobalAveragePoolingLayer())
 
-    net.add(DenseLayer(32, l2=0.01))  
+    net.add(DenseLayer(16))  
     net.add(BatchNormalizationLayer())  
     net.add(ReLUActivation())  
-    net.add(DropoutLayer(dropout_rate=0.4))  
+    net.add(DropoutLayer(dropout_rate=0.2))  
 
-    net.add(DenseLayer(16, l2=0.02))  
+    net.add(DenseLayer(8, l2=0.005))  
     net.add(BatchNormalizationLayer())  
     net.add(ReLUActivation())  
-    net.add(DropoutLayer(dropout_rate=0.6))  
+    net.add(DropoutLayer(dropout_rate=0.3))  
 
-    net.add(DenseLayer(1, l2=0.02))  
+    net.add(DenseLayer(1, l2=0.01))  
     net.add(SigmoidActivation())
 
-    net.fit(train_data, validation_data=test_data, patience=6)
+    net.fit(train_data, validation_data=test_data, patience=10)
     plot_history(net.history)
 
     while True:

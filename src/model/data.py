@@ -59,7 +59,7 @@ def read_parquet(filename):
     if data.shape[1] != 2:
         raise ValueError("O dataset deve ter exatamente duas colunas: uma independente e uma dependente.")
 
-    features = [f"feat_{i}" for i in range(128)]  # Nomeia as 128 features
+    features = [f"feat_{i}" for i in range(64)]  # Nomeia as 128 features
     label = data.columns[1]
 
     X = np.stack(data.iloc[:, 0].to_numpy())  # stack() converte corretamente para (N, 128)
