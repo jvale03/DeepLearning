@@ -12,6 +12,7 @@ class RecurrentNeuralNetwork:
     def __init__(self, epochs=100, batch_size=32, optimizer=None, 
                  learning_rate=0.01, momentum=0.90, verbose=True,
                  loss=BinaryCrossEntropy, metric=accuracy):
+        
         self.epochs = epochs
         self.batch_size = batch_size
         self.optimizer = Optimizer(learning_rate=learning_rate, momentum=momentum)
@@ -25,8 +26,10 @@ class RecurrentNeuralNetwork:
         
     def add(self, layer):
         if self.layers:
+            # Setting the input shape to the output shape of the last added layer
             layer.set_input_shape(input_shape=self.layers[-1].output_shape())
         if hasattr(layer, 'initialize'):
+            # Calling the initialize method if the layer has it
             layer.initialize(self.optimizer)
         self.layers.append(layer)
         return self
@@ -57,7 +60,6 @@ class RecurrentNeuralNetwork:
         for layer in reversed(self.layers):
             error = layer.backward_propagation(error)
         return error
-        
     
     def reshape_for_rnn(self, X):
         # If X is (batch_size, features), reshape to (batch_size, seq_len, features)
@@ -78,18 +80,21 @@ class RecurrentNeuralNetwork:
         best_weights = []
 
         for epoch in range(1, self.epochs + 1):
+            print(f"\nEpoch {epoch}/{self.epochs}")
             (train_loss, train_metric) = (0, 0)
             batch_count = 0
 
             # Training in each batch
             for X_batch, y_batch in self.get_mini_batches(X,y):
-                # Forward pass
+
+                print(f"Batch {batch_count + 1}/{len(X) // self.batch_size}", end='\r')
+                # Forward pass to get a prediction
                 output = self.forward_propagation(X_batch, training=True)
 
-                # Calculating error derivative
+                # Calculating the gradient of the loss function
                 error = self.loss.derivative(y_batch, output)
 
-                # Backward pass
+                # Backward pass to adjust the weights
                 self.backward_propagation(error)
 
                 # Calculating metric
@@ -100,10 +105,10 @@ class RecurrentNeuralNetwork:
                 train_metric += batch_metric
                 batch_count += 1
 
-            # Calculating average metric
+            # Calculating average metric for the epoch
             train_loss = train_loss / batch_count
             train_metric = train_metric / batch_count
-
+            
             # Storing training history
             self.history['train_loss'].append(train_loss)
             self.history['train_metric'].append(train_metric)
@@ -155,6 +160,7 @@ class RecurrentNeuralNetwork:
                 
         return self
 
+    # Convenience methods - not really being used in this project besides for save and load
     def predict(self, dataset):
         X = dataset.X
         X = self.reshape_for_rnn(X)
@@ -177,21 +183,27 @@ class RecurrentNeuralNetwork:
             model = pickle.load(f)
         print(f"Model loaded from {file_path}")
         return model
-    
+
+# Creating and training the RNN model    
 if __name__ == '__main__':
-    train_data = read_parquet('../../datasets/train/train_sample_processed.parquet')
-    test_data = read_parquet('../../datasets/test/test_sample_processed.parquet')
+    print('Started')
+
+    train_data = read_parquet('datasets/train/train_sample_processed.parquet')
+    test_data = read_parquet('datasets/test/test_sample_processed.parquet')
 
     # Creating a RNN model
     rnn = RecurrentNeuralNetwork(
-        epochs=50,
+        epochs=1,
         batch_size=16,
-        learning_rate=0.001,
+        learning_rate=0.01,
         momentum=0.9,
         verbose=True
     )
+    
+    print('Created model architecture')
 
     n_features = train_data.X.shape[1]
+    
 
     # Build RNN architecture
     # In this architecture, each token is treated as a timestep with dim=1
@@ -207,9 +219,13 @@ if __name__ == '__main__':
     
     rnn.add(DenseLayer(1))
     rnn.add(SigmoidActivation())
+
+    print('Added layers to model')
     
     # Train the model
     rnn.fit(train_data, validation_data=test_data, patience=7)
+
+    print('Model trained')
     
     # Plot training history
     plot_history(rnn.history)
@@ -217,4 +233,5 @@ if __name__ == '__main__':
     # Save model prompt
     save_model = input("Do you want to save the model? [y/n]: ")
     if save_model.lower() == 'y':
-        rnn.save("../../models/rnn_model.pkl")
+        rnn.save("models/rnn_model.pkl")
+        print('Model saved')

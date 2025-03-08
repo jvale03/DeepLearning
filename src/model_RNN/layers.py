@@ -223,20 +223,25 @@ class BatchNormalizationLayer(Layer):
 
 class RNNLayer(Layer):
     def __init__(self, n_units, input_shape=None, return_sequences=False):
+        '''
+        n_units: Number of units in the RNN layer, represents the hidden state size i.e. how much information to remember
+        input_shape: Shape of the input data
+        return_sequences: Whether to return the output for each timestep or just the last one
+        '''
         super().__init__()
-        self.n_units = n_units # Number of units in the RNN laye, represents the hidden state size
+        self.n_units = n_units
         self._input_shape = input_shape
         self.return_sequences = return_sequences
 
         # Weights
-        self.W = None # Input
-        self.U = None # Hidden
-        self.b = None
+        self.W = None # Input data 
+        self.U = None # Recurrent data
+        self.b = None # Bias
 
         # For backpropagation
-        self.inputs = None
-        self.states = None
-        self.outputs = None
+        self.inputs = None # Input sequence
+        self.states = None # Hidden states
+        self.outputs = None # Output sequence
 
     def initialize(self, optimizer):
         # Getting the input dimension
@@ -258,6 +263,7 @@ class RNNLayer(Layer):
         self.b = np.zeros((self.n_units,))
         '''
 
+        # Creating optimizers for each parameter
         self.W_opt = copy.deepcopy(optimizer)
         self.U_opt = copy.deepcopy(optimizer)
         self.b_opt = copy.deepcopy(optimizer)
@@ -265,16 +271,22 @@ class RNNLayer(Layer):
         return self
     
     def forward_propagation(self, inputs, training=True):
+        '''
+        inputs: Input data with shape (batch_size, sequence_length, n_features)
+        '''
+        # Getting the info out of the inputs var
         batch_size, sequence_length, n_features = inputs.shape
         self.inputs = inputs
-        self.states = [np.zeros((batch_size, self.n_units))] # Initial state
+        self.states = [np.zeros((batch_size, self.n_units))] # Initial hidden state
         self.outputs = []
 
         for t in range(sequence_length):
             # Getting the current input
             x_t = inputs[:, t, :]
+            # Getting the previous hidden state
             h_prev = self.states[-1]
 
+            # Calculating the hidden state for this timestep for each batch
             h_t = np.zeros((batch_size, self.n_units))
             for i in range(batch_size):
                 h_t[i] = np.tanh(
@@ -282,16 +294,21 @@ class RNNLayer(Layer):
                     np.dot(self.U, h_prev[i]) +
                     self.b
                 )
-
             self.states.append(h_t)
             self.outputs.append(h_t)
 
         if self.return_sequences:
+            # Returning the output for each timestep
             return np.stack(self.outputs, axis=1)
         else:
+            # Returning only the last output
             return self.outputs[-1]
         
     def backward_propagation(self, output_error):
+        '''
+        output_error: Error from the next layer with shape (batch_size, sequence_length, n_units) if return_sequences=True
+            or (batch_size, n_units) if return_sequences=False
+        '''
         batch_size, sequence_length, n_features = self.inputs.shape
 
         # Initializing gradients
@@ -307,11 +324,13 @@ class RNNLayer(Layer):
         if not self.return_sequences:
             dh_next = output_error
 
+        # If return_sequences=True, the error is from the last time step (t) to the first (0)
         for t in reversed(range(sequence_length)):
-            # Calculating the error for the next layer
             if self.return_sequences:
+                # current timestep gradient plus accumulated future gradient
                 dh = output_error[:, t, :] + dh_next
             else:
+                # using only accumulated future gradient
                 dh = dh_next
             
             # Getting current and previous state
@@ -342,17 +361,20 @@ class RNNLayer(Layer):
 
         return dx
 
+    # Returns the shape of the output
     def output_shape(self):
         if self.return_sequences:
             return (self._input_shape[0], self.n_units)
         else:
             return (self.n_units,)
         
+    # Calculates the number of parameters
     def parameters(self):
         return(np.prod(self.W.shape) +
                np.prod(self.U.shape) + 
                np.prod(self.b.shape))
     
+    # Returns the weights in a dictionary
     def get_weights(self):
         return {
             'W' : self.W.copy(),
@@ -360,6 +382,7 @@ class RNNLayer(Layer):
             'b' : self.b.copy()
         }
     
+    # Updates the weights with the ones in the dictionary
     def set_weights(self, weights):
         self.W = weights['W'].copy()
         self.U = weights['U'].copy()

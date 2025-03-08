@@ -4,7 +4,7 @@ from transformers import BertTokenizerFast
 from recurrent_neural_net import RecurrentNeuralNetwork
 
 # Carrega o tokenizer customizado
-tokenizer = BertTokenizerFast.from_pretrained("../data_processor/custom_tokenizer", local_files_only=True)
+tokenizer = BertTokenizerFast.from_pretrained("src/data_processor/custom_tokenizer", local_files_only=True)
 
 # Função para limpeza do texto
 def clean_text(text: str) -> str:
@@ -21,7 +21,7 @@ def process_texts(texts):
 
 # Load the trained RNN model
 try:
-    rnn = RecurrentNeuralNetwork.load("../../models/rnn_model.pkl")
+    rnn = RecurrentNeuralNetwork.load("models/rnn_model.pkl")
     print("RNN model loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")
