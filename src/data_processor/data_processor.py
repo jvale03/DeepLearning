@@ -5,16 +5,16 @@ from tokenizers import BertWordPieceTokenizer
 from sklearn.model_selection import train_test_split
 import os
 
-file = "../../datasets/new_data/Large_Physics_and_Science_Dataset.csv"
+file = "../../datasets/new_data/dataset.csv"
 
 corpus_file = "./custom_tokenizer/corpus.txt"
 
 def reshape_df(df):
     category_mapping = {"Human": 0, "AI": 1, "student": 0}
 
-    df["label"] = df["Source"].map(category_mapping)
-    df["text"] = df["Text"]
-    df = df[["text","label"]]
+    df["Label"] = df["Source"].map(category_mapping)
+    df["Text"] = df["Text"]
+    df = df[["Text","Label"]]
 
     return df
 
@@ -32,7 +32,7 @@ def create_tokenizer(df):
 
     corpus_texts = []
 
-    texts = [clean_text(text) for text in df["text"].tolist()]
+    texts = [clean_text(text) for text in df["Text"].tolist()]
     corpus_texts.extend(texts)
 
     with open(corpus_file, "w", encoding="utf-8") as f:
@@ -56,7 +56,7 @@ def create_tokenizer(df):
     return tokenizer
 
 def process_text(df,tokenizer):
-    texts = [clean_text(text) for text in df["text"].tolist()]
+    texts = [clean_text(text) for text in df["Text"].tolist()]
 
     tokenized = tokenizer(
         texts,
@@ -65,12 +65,12 @@ def process_text(df,tokenizer):
         max_length=128,
     )["input_ids"]
 
-    df["text"] = tokenized
+    df["Text"] = tokenized
 
     return df
 
 def split_data(df):
-    train_df, test_df = train_test_split(df, test_size=0.25, shuffle=True, random_state=42, stratify=df["label"])
+    train_df, test_df = train_test_split(df, test_size=0.25, shuffle=True, random_state=42, stratify=df["Label"])
     train_file = file.replace(".csv", "_train.parquet")
     test_file = file.replace(".csv", "_test.parquet")
 
@@ -81,7 +81,7 @@ def split_data(df):
 if __name__ == "__main__":
     df = pd.read_csv(file)
 
-    df = reshape_df(df)
+    #df = reshape_df(df)
 
     tokenizer = create_tokenizer(df)
 
