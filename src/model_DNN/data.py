@@ -66,4 +66,3 @@ def read_parquet(filename):
     y = data.iloc[:, 1].to_numpy(dtype=np.float32)
 
     return Data(X=X, y=y, features=features, label=label)
-

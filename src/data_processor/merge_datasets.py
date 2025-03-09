@@ -3,7 +3,20 @@ import gc
 
 new_df = pd.DataFrame(columns=["text","label"])
 
+df_new_data = pd.read_csv("../../datasets/new_data/Large_Physics_and_Science_Dataset.csv")
 
+category_mapping = {"human": 0, "ai": 1, "student": 0}
+
+df_new_data["label"] = df_new_data["Source"].map(category_mapping)
+df_new_data["text"] = df_new_data["Text"]
+df_new_data = df_new_data[["text","label"]]
+
+df_new_data.to_csv("../../datasets/new_data/Large_Physics_and_Science_Dataset_Processed.csv",index=False)
+
+
+
+
+"""
 parquet_files = [
     "../datasets/train-00000-of-00007-bc5952582e004d67.parquet",
     "../datasets/train-00001-of-00007-71c80017bc45f30d.parquet",
@@ -81,3 +94,4 @@ model_training_dataset.to_parquet("../datasets/merged_2.parquet")
 print(model_training_dataset.columns)
 print("Third csv check!")
 
+"""

@@ -10,8 +10,8 @@ test_2 = pd.read_parquet("../../datasets/test/merged_2_test.parquet")
 target_column = "label"  # Substitui pelo nome correto da tua variável alvo
 
 # Amostragem estratificada para treino
-train_1 = train_1.groupby(target_column).sample(n=45_000, random_state=42)
-train_2 = train_2.groupby(target_column).sample(n=45_000, random_state=42)
+train_1 = train_1.groupby(target_column).sample(n=50_000, random_state=42)
+train_2 = train_2.groupby(target_column).sample(n=50_000, random_state=42)
 
 
 # Concatenar e salvar
@@ -19,8 +19,8 @@ train = pd.concat([train_1, train_2], ignore_index=True)
 train.to_parquet("../../datasets/train/train_sample.parquet")
 
 # Amostragem estratificada para teste
-test_1 = test_1.groupby(target_column).sample(n=12_500, random_state=42)
-test_2 = test_2.groupby(target_column).sample(n=12_500, random_state=42)
+test_1 = test_1.groupby(target_column).sample(n=5_000, random_state=42)
+test_2 = test_2.groupby(target_column).sample(n=5_000, random_state=42)
 
 # Concatenar e salvar
 test = pd.concat([test_1, test_2], ignore_index=True)

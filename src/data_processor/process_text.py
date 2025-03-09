@@ -1,10 +1,3 @@
-# csvs = [
-#     "../../datasets/test/merged_1_test.parquet",
-#     "../../datasets/test/merged_2_test.parquet",
-#     "../../datasets/train/merged_1_train.parquet",
-#     "../../datasets/train/merged_2_train.parquet",
-# ]
-
 import pandas as pd
 import re
 from transformers import BertTokenizerFast
@@ -20,8 +13,8 @@ def clean_text(text: str) -> str:
 
 # Lista de arquivos de exemplo
 csvs = [
-    "../../datasets/test/test_sample.parquet",
-    "../../datasets/train/train_sample.parquet",
+    "../../datasets/new_data/Large_Physics_and_Science_Dataset_Processed_train.parquet",
+    "../../datasets/new_data/Large_Physics_and_Science_Dataset_Processed_test.parquet",
 ]
 
 # 1. Coleta dos textos do corpus e limpeza (se desejar)
@@ -44,7 +37,7 @@ custom_tokenizer = BertWordPieceTokenizer(lowercase=True)
 custom_tokenizer.train(
     files=[corpus_file],
     vocab_size=5000,
-    min_frequency=2,
+    min_frequency=0,
     show_progress=True,
     special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
 )
