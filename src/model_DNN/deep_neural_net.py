@@ -8,8 +8,8 @@ from activation import SigmoidActivation, ReLUActivation
 import pickle
 from visualization import plot_history
 
-train_file = '../../datasets/new_data/Large_Physics_and_Science_Dataset_Processed_train_processed.parquet'
-test_file = '../../datasets/new_data/Large_Physics_and_Science_Dataset_Processed_test_processed.parquet'
+train_file = '../../datasets/new_data/Large_Physics_and_Science_Dataset_train.parquet'
+test_file = '../../datasets/new_data/Large_Physics_and_Science_Dataset_test.parquet'
 
 class DeepNeuralNetwork:
     def __init__(self, epochs=100, batch_size=128, optimizer=None,

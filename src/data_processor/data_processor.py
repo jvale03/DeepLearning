@@ -10,7 +10,7 @@ file = "../../datasets/new_data/Large_Physics_and_Science_Dataset.csv"
 corpus_file = "./custom_tokenizer/corpus.txt"
 
 def reshape_df(df):
-    category_mapping = {"human": 0, "ai": 1, "student": 0}
+    category_mapping = {"Human": 0, "AI": 1, "student": 0}
 
     df["label"] = df["Source"].map(category_mapping)
     df["text"] = df["Text"]
@@ -27,6 +27,9 @@ def clean_text(text: str) -> str:
 
 
 def create_tokenizer(df):
+    tokenizer_directory = "./custom_tokenizer"
+    os.makedirs(tokenizer_directory, exist_ok=True)
+
     corpus_texts = []
 
     texts = [clean_text(text) for text in df["text"].tolist()]
@@ -45,8 +48,6 @@ def create_tokenizer(df):
         special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
     )
 
-    tokenizer_directory = "./custom_tokenizer"
-    os.makedirs(tokenizer_directory, exist_ok=True)
 
     custom_tokenizer.save_model(tokenizer_directory)
 
@@ -61,7 +62,7 @@ def process_text(df,tokenizer):
         texts,
         padding="max_length",
         truncation=True,
-        max_length=64,
+        max_length=128,
     )["input_ids"]
 
     df["text"] = tokenized
@@ -69,7 +70,7 @@ def process_text(df,tokenizer):
     return df
 
 def split_data(df):
-    train_df, test_df = train_test_split(df, test_size=0.25, shuffle=True, random_state=42)
+    train_df, test_df = train_test_split(df, test_size=0.25, shuffle=True, random_state=42, stratify=df["label"])
     train_file = file.replace(".csv", "_train.parquet")
     test_file = file.replace(".csv", "_test.parquet")
 
