@@ -188,14 +188,14 @@ class RecurrentNeuralNetwork:
 if __name__ == '__main__':
     print('Started')
 
-    train_data = read_parquet('datasets/train/train_sample_processed.parquet')
-    test_data = read_parquet('datasets/test/test_sample_processed.parquet')
+    train_data = read_parquet('datasets/dataset_train.parquet')
+    test_data = read_parquet('datasets/dataset_test.parquet')
 
     # Creating a RNN model
     rnn = RecurrentNeuralNetwork(
-        epochs=1,
+        epochs=5,
         batch_size=16,
-        learning_rate=0.01,
+        learning_rate=0.1,
         momentum=0.9,
         verbose=True
     )
@@ -208,8 +208,8 @@ if __name__ == '__main__':
     # Build RNN architecture
     # In this architecture, each token is treated as a timestep with dim=1
     # Input shape: (batch_size, sequence_length, 1)
-    rnn.add(RNNLayer(32, input_shape=(n_features, 1), return_sequences=True))
-    rnn.add(RNNLayer(16, return_sequences=False))
+    rnn.add(RNNLayer(32, input_shape=(n_features, 1), return_sequences=True, bptt_trunc=None))
+    rnn.add(RNNLayer(16, return_sequences=False, bptt_trunc=None))
     rnn.add(BatchNormalizationLayer())
     rnn.add(ReLUActivation())
     rnn.add(DropoutLayer(dropout_rate=0.3))

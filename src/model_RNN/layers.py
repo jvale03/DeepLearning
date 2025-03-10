@@ -222,16 +222,19 @@ class BatchNormalizationLayer(Layer):
 
 
 class RNNLayer(Layer):
-    def __init__(self, n_units, input_shape=None, return_sequences=False):
+    def __init__(self, n_units, input_shape=None, return_sequences=False, bptt_trunc=None):
         '''
         n_units: Number of units in the RNN layer, represents the hidden state size i.e. how much information to remember
         input_shape: Shape of the input data
         return_sequences: Whether to return the output for each timestep or just the last one
+        bptt_trunc: The number of time steps to backpropagate through time (i.e. the number of time steps to unroll the RNN).
         '''
+
         super().__init__()
         self.n_units = n_units
         self._input_shape = input_shape
         self.return_sequences = return_sequences
+        self.bptt_trunc = bptt_trunc
 
         # Weights
         self.W = None # Input data 
@@ -311,6 +314,15 @@ class RNNLayer(Layer):
         '''
         batch_size, sequence_length, n_features = self.inputs.shape
 
+        # Determine how many timesteps to go backwards
+        # should be the minimum between bptt_trunc and sequence_length
+        if self.bptt_trunc is not None:
+            backpropg_steps = min(sequence_length, self.bptt_trunc)
+            start_t = max(0, sequence_length - backpropg_steps)
+        else:
+            backpropg_steps = sequence_length
+            start_t = 0
+
         # Initializing gradients
         dW = np.zeros_like(self.W)
         dU = np.zeros_like(self.U)
@@ -325,7 +337,7 @@ class RNNLayer(Layer):
             dh_next = output_error
 
         # If return_sequences=True, the error is from the last time step (t) to the first (0)
-        for t in reversed(range(sequence_length)):
+        for t in reversed(range(start_t, sequence_length)):
             if self.return_sequences:
                 # current timestep gradient plus accumulated future gradient
                 dh = output_error[:, t, :] + dh_next
