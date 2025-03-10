@@ -44,4 +44,4 @@ pip install requests beautifulsoup4
 ## Notes
 
 - Ensure you have an internet connection to scrape and download papers.
-- Modify the URLs in the scripts as needed to target specific categories or papers.
+- ⚠️ WARNING: Be careful with using the scraper without a stop mechanism, as it will download every paper it can find (Possible memory overflow)
