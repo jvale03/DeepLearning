@@ -10,9 +10,9 @@ def read_sentences_from_txt(file_path):
     sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
     return sentences
 
-def filter_sentences(sentences, min_length=120):
-    """Filtra frases que tenham pelo menos min_length caracteres e terminem com '.'"""
-    filtered_sentences = [sent for sent in sentences if len(sent) >= min_length and sent.endswith('.')]
+def filter_sentences(sentences, min_words=80, max_words=120):
+    """Filtra frases que tenham entre min_words e max_words palavras e terminem com '.'"""
+    filtered_sentences = [sent for sent in sentences if min_words <= len(sent.split()) <= max_words and sent.endswith('.')]
     return filtered_sentences
 
 def write_sentences_to_csv(sentences, output_csv):
@@ -24,11 +24,11 @@ def write_sentences_to_csv(sentences, output_csv):
             writer.writerow([sentence,0])
 
 def main():
-    input_txt = "all_sentences.txt" 
+    input_txt = "teste.txt" 
     output_csv = "Human_Dataset.csv"
 
     sentences = read_sentences_from_txt(input_txt)
-    filtered_sentences = filter_sentences(sentences, min_length=120)
+    filtered_sentences = filter_sentences(sentences, min_words=80, max_words=120)
     
     write_sentences_to_csv(filtered_sentences, output_csv)
     print(f"Frases filtradas salvas em {output_csv}")
