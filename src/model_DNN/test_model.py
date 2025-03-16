@@ -35,7 +35,7 @@ def predict_text(text):
     text_processed = process_texts([text_clean])
     mock_dataset = MockDataset(np.array(text_processed))
     prediction = dnn.predict(mock_dataset)
-    prediction_label = "Humano" if prediction[0][0] >= 0.5 else "IA"
+    prediction_label = "IA" if prediction[0][0] >= 0.5 else "Humano"
     print(f"Previsão do modelo: {prediction_label} (Confiança: {prediction[0][0]:.4f})")
 
 # Função para prever a partir de um ficheiro de texto
@@ -48,7 +48,7 @@ def predict_from_txt(file_path):
     predictions = dnn.predict(mock_dataset)
 
     df = pd.DataFrame()
-    df["previsao"] = ["Humano" if p[0] >= 0.5 else "IA" for p in predictions]
+    df["previsao"] = ["IA" if p[0] >= 0.5 else "Humano" for p in predictions]
     df["confianca"] = [p[0] for p in predictions]
 
     output_file = "../../datasets/sores/predicoes.csv"
