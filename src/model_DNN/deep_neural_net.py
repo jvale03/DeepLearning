@@ -1,15 +1,15 @@
 import numpy as np
-from layers import DenseLayer, EmbeddingLayer, FlattenLayer, DropoutLayer
-from losses import BinaryCrossEntropy
+from layers import DenseLayer, EmbeddingLayer, FlattenLayer, DropoutLayer, BatchNormalizationLayer, GlobalAveragePoolingLayer, GlobalAveragePooling1D
+from losses import BinaryCrossEntropy   
 from optimizer import Optimizer
 from metrics import accuracy
-from data import read_parquet
+from data import read_parquet, read_csv
 from activation import SigmoidActivation, ReLUActivation
 import pickle
 from visualization import plot_history
 
-train_file = '../../datasets/new_data/Large_Physics_and_Science_Dataset_train.parquet'
-test_file = '../../datasets/new_data/Large_Physics_and_Science_Dataset_test.parquet'
+train_file = '../../datasets/new_data/new_train.csv'
+test_file = '../../datasets/new_data/new_test.csv'
 
 class DeepNeuralNetwork:
     def __init__(self, epochs=100, batch_size=128, optimizer=None,
@@ -135,29 +135,30 @@ class DeepNeuralNetwork:
         return model
 
 if __name__ == '__main__':
-    train_data = read_parquet(train_file)
-    test_data = read_parquet(test_file)
+    train_data = read_csv(train_file)
+    test_data = read_csv(test_file)
 
-    net = DeepNeuralNetwork(epochs=10, batch_size=32, learning_rate=0.01, verbose=True,
+
+    net = DeepNeuralNetwork(epochs=30, batch_size=32, learning_rate=0.001, verbose=True,
                             loss=BinaryCrossEntropy, metric=accuracy)
 
     n_features = train_data.X.shape[1]
 
-    net.add(EmbeddingLayer(vocab_size=5000, embedding_dim=16, input_shape=(n_features,)))
-    net.add(FlattenLayer())
+    net.add(EmbeddingLayer(vocab_size=5000, embedding_dim=8, input_shape=(n_features,)))
+    net.add(GlobalAveragePooling1D())
 
-    net.add(DenseLayer(16, l2=0.01))
-    #net.add(BatchNormalizationLayer())  
-    net.add(ReLUActivation())  
-    net.add(DropoutLayer(dropout_rate=0.3))  
+    net.add(DenseLayer(32, l2=0.01))
+    net.add(ReLUActivation())
+    net.add(DropoutLayer(0.2))
 
-    net.add(DenseLayer(8))
-    net.add(ReLUActivation())  
+    net.add(DenseLayer(16, l2=0.02))
+    net.add(ReLUActivation())
+    net.add(DropoutLayer(0.3))
 
     net.add(DenseLayer(1))  
     net.add(SigmoidActivation())
 
-    net.fit(train_data, validation_data=test_data, patience=100)
+    net.fit(train_data, validation_data=test_data, patience=10)
     plot_history(net.history)
 
     while True:

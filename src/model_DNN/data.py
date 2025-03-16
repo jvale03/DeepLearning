@@ -20,37 +20,25 @@ class Data:
         self.label = label
 
 
-def read_csv(filename,
-             sep = ',',
-             features = False,
-             label = False):
- 
-    data = pd.read_csv(filename, sep=sep)
+import ast
 
-    if features and label:
-        features = data.columns[:-1]
-        label = data.columns[-1]
-        X = data.iloc[:, :-1].to_numpy()
-        y = data.iloc[:, -1].to_numpy()
+def read_csv(filename):
+    data = pd.read_csv(filename)
 
-    elif features and not label:
-        features = data.columns
-        X = data.to_numpy()
-        y = None
+    if data.shape[1] != 2:
+        raise ValueError("O dataset deve ter exatamente duas colunas: uma independente e uma dependente.")
 
-    elif not features and label:
-        X = data.iloc[:, :-1].to_numpy()
-        y = data.iloc[:, -1].to_numpy()
-        features = None
-        label = data.columns[-1]
+    features = [f"feat_{i}" for i in range(128)]  # Nomeia as 128 features
+    label = data.columns[1]
 
-    else:
-        X = data.to_numpy()
-        y = None
-        features = None
-        label = None
+    # Converte corretamente a primeira coluna para um array de inteiros (N, 128)
+    X = np.stack(data.iloc[:, 0].apply(lambda x: np.array(ast.literal_eval(x), dtype=np.int32)).to_numpy())
+
+    # Converte os labels para float32
+    y = data.iloc[:, 1].astype(np.float32).to_numpy()
 
     return Data(X=X, y=y, features=features, label=label)
+
 
 
 def read_parquet(filename):

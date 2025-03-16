@@ -1,3 +1,4 @@
+
 import pandas as pd
 import re
 from transformers import BertTokenizerFast
@@ -5,31 +6,33 @@ from tokenizers import BertWordPieceTokenizer
 from sklearn.model_selection import train_test_split
 import os
 
-file = "../../datasets/new_data/dataset.csv"
 
 corpus_file = "./custom_tokenizer/corpus.txt"
 
+file = "../../datasets/new_data/new.csv"
+
 def reshape_df(df):
     category_mapping = {"Human": 0, "AI": 1, "student": 0}
-
     df["Label"] = df["Source"].map(category_mapping)
-    df["Text"] = df["Text"]
-    df = df[["Text","Label"]]
-
+    df = df[["Text", "Label"]]
     return df
 
+# def clean_text(text: str) -> str:
+#     text = text.lower()
+#     text = re.sub(r'[^a-z\s]', '', text)
+#     return text
+# este novo mantem a pontuação
 
 def clean_text(text: str) -> str:
-    """Limpa o texto removendo caracteres especiais e deixa tudo em minúsculo."""
     text = text.lower()
-    text = re.sub(r'[^a-z\s]', '', text)
+    text = re.sub(r'[^a-z\s.,]', '', text)  # Mantém letras, espaços, pontos e vírgulas
     return text
 
+def load_tokenizer():
+    tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    return tokenizer
 
 def create_tokenizer(df):
-    tokenizer_directory = "./custom_tokenizer"
-    os.makedirs(tokenizer_directory, exist_ok=True)
-
     corpus_texts = []
 
     texts = [clean_text(text) for text in df["Text"].tolist()]
@@ -43,11 +46,13 @@ def create_tokenizer(df):
     custom_tokenizer.train(
         files=[corpus_file],
         vocab_size=5000,
-        min_frequency=0,
+        min_frequency=5,
         show_progress=True,
         special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
     )
 
+    tokenizer_directory = "./custom_tokenizer"
+    os.makedirs(tokenizer_directory, exist_ok=True)
 
     custom_tokenizer.save_model(tokenizer_directory)
 
@@ -55,28 +60,26 @@ def create_tokenizer(df):
 
     return tokenizer
 
-def process_text(df,tokenizer):
+def process_text(df, tokenizer):
     texts = [clean_text(text) for text in df["Text"].tolist()]
-
     tokenized = tokenizer(
         texts,
         padding="max_length",
         truncation=True,
         max_length=128,
     )["input_ids"]
-
     df["Text"] = tokenized
-
     return df
 
 def split_data(df):
-    train_df, test_df = train_test_split(df, test_size=0.25, shuffle=True, random_state=42, stratify=df["Label"])
-    train_file = file.replace(".csv", "_train.parquet")
-    test_file = file.replace(".csv", "_test.parquet")
-
-    train_df.to_parquet(train_file, index=False)
-    test_df.to_parquet(test_file, index=False)
-
+    df = df[["Text","Label"]]
+    train_df, test_df = train_test_split(
+        df, test_size=0.15, shuffle=True, random_state=42, stratify=df["Label"]
+    )
+    train_file = file.replace(".csv", "_train.csv")
+    test_file = file.replace(".csv", "_test.csv")
+    train_df.to_csv(train_file, index=False)
+    test_df.to_csv(test_file, index=False)
 
 if __name__ == "__main__":
     df = pd.read_csv(file)

@@ -144,8 +144,9 @@ class DropoutLayer(Layer):
         self.input = inputs
         if training:
             self.mask = np.random.binomial(1, 1 - self.dropout_rate, size=inputs.shape) / (1 - self.dropout_rate)
-            return inputs * self.mask
-        return inputs
+        else:
+            self.mask = 1  # Mantém os valores inalterados durante a inferência
+        return inputs * self.mask
 
     def backward_propagation(self, output_error):
         return output_error * self.mask if self.mask is not None else output_error
@@ -164,7 +165,7 @@ class BatchNormalizationLayer(Layer):
         self.beta = None
         self.running_mean = None
         self.running_var = None
-        self.input = None
+        self.input = None 
         self.output = None
         
     def initialize(self, optimizer):
@@ -194,18 +195,20 @@ class BatchNormalizationLayer(Layer):
     
     def backward_propagation(self, output_error):
         batch_size = self.input.shape[0]
+        batch_mean = np.mean(self.input, axis=0)
+        batch_var = np.var(self.input, axis=0)
         
         dgamma = np.sum(output_error * self.norm, axis=0)
         dbeta = np.sum(output_error, axis=0)
-        
+
         self.gamma = self.gamma_opt.update(self.gamma, dgamma)
         self.beta = self.beta_opt.update(self.beta, dbeta)
-        
+
         dnorm = output_error * self.gamma
-        dvar = np.sum(dnorm * (self.input - np.mean(self.input, axis=0)) * -0.5 * (self.running_var + self.epsilon) ** -1.5, axis=0)
-        dmean = np.sum(dnorm * -1 / np.sqrt(self.running_var + self.epsilon), axis=0) + dvar * np.mean(-2 * (self.input - np.mean(self.input, axis=0)), axis=0)
-        
-        input_error = dnorm / np.sqrt(self.running_var + self.epsilon) + dvar * 2 * (self.input - np.mean(self.input, axis=0)) / batch_size + dmean / batch_size
+        dvar = np.sum(dnorm * (self.input - batch_mean) * -0.5 * (batch_var + self.epsilon) ** -1.5, axis=0)
+        dmean = np.sum(dnorm * -1 / np.sqrt(batch_var + self.epsilon), axis=0) + dvar * np.mean(-2 * (self.input - batch_mean), axis=0)
+
+        input_error = (dnorm / np.sqrt(batch_var + self.epsilon)) + (dvar * 2 * (self.input - batch_mean) / batch_size) + (dmean / batch_size)
         return input_error
     
     def output_shape(self):
@@ -241,3 +244,41 @@ class GlobalAveragePoolingLayer(Layer):
 
     def parameters(self):
         return 0
+    
+class GlobalAveragePooling1D(Layer):
+    def __init__(self):
+        super().__init__()
+
+    def forward_propagation(self, inputs, training=True):
+        """
+        Calcula a média ao longo da dimensão temporal (axis=1).
+        inputs: tensor de forma (batch_size, seq_len, features)
+        Retorna: tensor de forma (batch_size, features)
+        """
+        self.input = inputs
+        self.output = np.mean(inputs, axis=1)  # Média sobre seq_len
+        return self.output
+
+    def backward_propagation(self, output_error):
+        """
+        Distribui o erro uniformemente pela sequência.
+        output_error: gradiente da camada seguinte, de forma (batch_size, features)
+        Retorna: gradiente com a mesma forma que os inputs (batch_size, seq_len, features)
+        """
+        seq_len = self.input.shape[1]
+        return np.repeat(output_error[:, np.newaxis, :], seq_len, axis=1) / seq_len
+
+    def output_shape(self):
+        if self._input_shape is None:
+            raise ValueError("Input shape não definida para GlobalAveragePooling1D.")
+        # Se a _input_shape foi definida sem a dimensão do batch, ela deve ter 2 dimensões: (seq_len, features)
+        if len(self._input_shape) == 2:
+            return (self._input_shape[1],)
+        # Se a _input_shape incluir a dimensão do batch (3 dimensões), ignora o batch
+        elif len(self._input_shape) == 3:
+            return (self._input_shape[2],)
+        else:
+            raise ValueError("GlobalAveragePooling1D requer entrada de 2 ou 3 dimensões (seq_len, features) ou (batch, seq_len, features).")
+
+    def parameters(self):
+        return 0  # Camada sem parâmetros treináveis
