@@ -9,7 +9,7 @@ To use this script, the files dataset1_inputs.csv and dataset1_outputs.csv must 
 '''
 
 # Carrega o tokenizer customizado
-tokenizer = BertTokenizerFast.from_pretrained("src/data_processor/custom_tokenizer", local_files_only=True)
+tokenizer = BertTokenizerFast.from_pretrained("custom_tokenizer", local_files_only=True)
 
 # Função para limpeza do texto
 def clean_text(text: str) -> str:
@@ -26,7 +26,7 @@ def process_texts(texts):
 
 # Load the trained RNN model
 try:
-    rnn = RecurrentNeuralNetwork.load("models/rnn_model.pkl")
+    rnn = RecurrentNeuralNetwork.load("models/rnn_model_v3.pkl")
     print("RNN model loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")
@@ -62,7 +62,7 @@ with open(output_file, 'r', encoding='utf-8') as f:
             parts = line.strip().split()
             if len(parts) == 2:
                 doc_id, label = parts
-                expected_outputs[doc_id] = 1.0 if label.upper() == "HUMAN" else 0.0
+                expected_outputs[doc_id] = 0.0 if label.upper() == "HUMAN" else 1.0
 
 # Processing and evaluating each entry
 correct_predictions = 0
@@ -81,8 +81,8 @@ for doc_id, text in input_data.items():
         # Create dataset and predict
         mock_dataset = MockDataset(np.array(text_processed))
         prediction = rnn.predict(mock_dataset)
-        predicted_label = "Human" if prediction >= 0.5 else "AI"
-        expected_label = "Human" if expected_outputs[doc_id] >= 0.5 else "AI"
+        predicted_label = "Human" if prediction <= 0.5 else "AI"
+        expected_label = "Human" if expected_outputs[doc_id] <= 0.5 else "AI"
         
         # Compare prediction with expected output
         is_correct = (predicted_label == expected_label)
@@ -104,8 +104,8 @@ if total_predictions > 0:
 else:
     print("No predictions were made. Check your input files.")
 
-# Get prediction distribuition - how many AI and Human predictions were made
-ai_predictions = sum(1 for label in expected_outputs.values() if label < 0.5)
+# Get prediction distribution - how many AI and Human predictions were made
+ai_predictions = sum(1 for doc_id, text in input_data.items() if doc_id != "ID" and rnn.predict(MockDataset(np.array(process_texts([clean_text(text)])))) > 0.5)
 human_predictions = total_predictions - ai_predictions
 
 print(f"The model predicted AI {ai_predictions} times")

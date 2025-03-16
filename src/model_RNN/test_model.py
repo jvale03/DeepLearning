@@ -4,7 +4,7 @@ from transformers import BertTokenizerFast
 from recurrent_neural_net import RecurrentNeuralNetwork
 
 # Carrega o tokenizer customizado
-tokenizer = BertTokenizerFast.from_pretrained("src/data_processor/custom_tokenizer", local_files_only=True)
+tokenizer = BertTokenizerFast.from_pretrained("custom_tokenizer", local_files_only=True)
 
 # Função para limpeza do texto
 def clean_text(text: str) -> str:
@@ -43,5 +43,5 @@ while True:
     opt_processed = process_texts([opt_clean])
     mock_dataset = MockDataset(np.array(opt_processed))
     prediction = rnn.predict(mock_dataset)
-    prediction_label = "Humano" if prediction >= 0.5 else "IA"
+    prediction_label = "Humano" if prediction <= 0.5 else "IA"
     print(f"Previsão do modelo: {prediction_label} (Confiança: {prediction[0][0]:.4f})")

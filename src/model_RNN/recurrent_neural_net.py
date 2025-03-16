@@ -188,50 +188,54 @@ class RecurrentNeuralNetwork:
 if __name__ == '__main__':
     print('Started')
 
-    train_data = read_parquet('datasets/dataset_train.parquet')
-    test_data = read_parquet('datasets/dataset_test.parquet')
+    train_data = read_parquet('datasets/new_data/Merged_Dataset_train.parquet')
+    test_data = read_parquet('datasets/new_data/Merged_Dataset_test.parquet')
 
-    # Creating a RNN model
-    rnn = RecurrentNeuralNetwork(
-        epochs=5,
-        batch_size=16,
-        learning_rate=0.1,
-        momentum=0.9,
-        verbose=True
-    )
+    version = 1
+    learning_rates = [0.1, 0.01, 0.001]
     
-    print('Created model architecture')
+    for l in learning_rates:
+        # Creating a RNN model
+        rnn = RecurrentNeuralNetwork(
+            epochs=10,
+            batch_size=16,
+            learning_rate=l,
+            momentum=0.9,
+            verbose=True
+        )
+        
+        print('Created model architecture')
 
-    n_features = train_data.X.shape[1]
-    
+        n_features = train_data.X.shape[1]
 
-    # Build RNN architecture
-    # In this architecture, each token is treated as a timestep with dim=1
-    # Input shape: (batch_size, sequence_length, 1)
-    rnn.add(RNNLayer(32, input_shape=(n_features, 1), return_sequences=True, bptt_trunc=None))
-    rnn.add(RNNLayer(16, return_sequences=False, bptt_trunc=None))
-    rnn.add(BatchNormalizationLayer())
-    rnn.add(ReLUActivation())
-    rnn.add(DropoutLayer(dropout_rate=0.3))
-    
-    rnn.add(DenseLayer(8))
-    rnn.add(ReLUActivation())
-    
-    rnn.add(DenseLayer(1))
-    rnn.add(SigmoidActivation())
+        # Build RNN architecture
+        # In this architecture, each token is treated as a timestep with dim=1
+        # Input shape: (batch_size, sequence_length, 1)
+        rnn.add(RNNLayer(32, input_shape=(n_features, 1), return_sequences=True, bptt_trunc=None))
+        rnn.add(RNNLayer(16, return_sequences=False, bptt_trunc=None))
+        rnn.add(BatchNormalizationLayer())
+        rnn.add(ReLUActivation())
+        rnn.add(DropoutLayer(dropout_rate=0.3))
+        
+        rnn.add(DenseLayer(8))
+        rnn.add(ReLUActivation())
+        
+        rnn.add(DenseLayer(1))
+        rnn.add(SigmoidActivation())
 
-    print('Added layers to model')
-    
-    # Train the model
-    rnn.fit(train_data, validation_data=test_data, patience=7)
+        print('Added layers to model')
+        
+        # Train the model
+        rnn.fit(train_data, validation_data=test_data, patience=7)
 
-    print('Model trained')
-    
-    # Plot training history
-    plot_history(rnn.history)
-    
-    # Save model prompt
-    save_model = input("Do you want to save the model? [y/n]: ")
-    if save_model.lower() == 'y':
-        rnn.save("models/rnn_model.pkl")
+        print('Model trained')
+        
+        # Plot training history
+        #plot_history(rnn.history)
+        
+        # Save model prompt
+        #save_model = input("Do you want to save the model? [y/n]: ")
+        #if save_model.lower() == 'y':
+        rnn.save(f"models/rnn_model_v{version}.pkl")
         print('Model saved')
+        version+=1
