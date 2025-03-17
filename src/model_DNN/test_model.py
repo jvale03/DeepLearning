@@ -22,7 +22,7 @@ def process_texts(texts):
 
 # Carrega o modelo treinado
 dnn = DeepNeuralNetwork()
-dnn = dnn.load("../../models/modelo_treinado.pkl")
+dnn = dnn.load("../../models/modelo_dnn.pkl")
 
 # Classe mock para compatibilidade com o modelo
 class MockDataset:
@@ -38,22 +38,29 @@ def predict_text(text):
     prediction_label = "IA" if prediction[0][0] >= 0.5 else "Humano"
     print(f"Previsão do modelo: {prediction_label} (Confiança: {prediction[0][0]:.4f})")
 
-# Função para prever a partir de um ficheiro de texto
+
 def predict_from_txt(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
-        texts = [line.strip() for line in f.readlines() if line.strip()]
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+    
+    valid_lines = [line for line in lines if line.lower() != "id;text"]
+    
+    ids, texts = zip(*[line.split(";", 1) for line in valid_lines if ";" in line])
     
     processed_texts = process_texts([clean_text(t) for t in texts])
     mock_dataset = MockDataset(np.array(processed_texts))
     predictions = dnn.predict(mock_dataset)
 
+    # Criar dataframe com previsões e IDs
     df = pd.DataFrame()
-    df["previsao"] = ["IA" if p[0] >= 0.5 else "Humano" for p in predictions]
-    df["confianca"] = [p[0] for p in predictions]
-
-    output_file = "../../datasets/sores/predicoes.csv"
-    df.to_csv(output_file, index=False)
+    df["ID"] = ids
+    df["Label"] = ["AI" if p[0] >= 0.5 else "Human" for p in predictions]
+    df["Confiança"] = [p[0] for p in predictions]
+    
+    output_file = "../../datasets/dataset2_outputs.csv"
+    df.to_csv(output_file, index=False, sep=";")
     print(f"Previsões salvas em {output_file}")
+
 
 # Menu interativo
 while True:
@@ -64,7 +71,7 @@ while True:
         predict_text(text)
 
     elif opt == "2":
-        predict_from_txt("../../datasets/sores/dataset1_inputs.csv")
+        predict_from_txt("../../datasets/dataset2_inputs.csv")
 
     elif opt == "3":
         break
