@@ -186,8 +186,8 @@ class RecurrentNeuralNetwork:
 if __name__ == '__main__':
     print('Started')
 
-    train_file = 'datasets/new_data/new_train.csv'
-    test_file = 'datasets/new_data/new_test.csv'
+    train_file = '../../datasets/dataset_train.csv'
+    test_file = '../../datasets/dataset_test.csv'
     train_data = read_csv(train_file)
     test_data = read_csv(test_file)
     # Creating a RNN model
@@ -223,5 +223,5 @@ if __name__ == '__main__':
     
     save_model = input("Do you want to save the model? [y/n]: ")
     if save_model.lower() == 'y':
-        rnn.save("models/rnn_model.pkl")
+        rnn.save("../../models/rnn_model.pkl")
         print('Model saved')
