@@ -26,6 +26,7 @@ Project/
 │
 ├── datasets/
 │   ├── dataset.csv
+│   └── dataset2_inputs.csv
 |
 ├── models/
 |
@@ -56,6 +57,11 @@ Project/
 │
 ├── submissions/
 │   ├── submission_1/
+│   │   ├── notebook-s1.ipynb
+│   │   └── results-s1.csv
+│   ├── submission_2/
+│   │   ├── notebook-s2.ipynb
+│   │   └── results-s2.csv
 │
 ├── requirements.txt
 ├── .gitignore
