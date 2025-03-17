@@ -53,6 +53,8 @@ Project/
 │   │   └── data.py
 │   └── losses.py
 │
+├── submissions/
+│
 ├── requirements.txt
 ├── .gitignore
 └── .gitattributes
@@ -80,3 +82,6 @@ Implements an RNN-based deep learning model for processing scientific text. It i
 
 ### `src/model_DNN/`
 Provides an alternative deep learning approach using a DNN model. Like the RNN module, it includes functionalities for training, testing, and analyzing performance.
+
+### `submissions/`
+All notebooks subsmissions and the .csv generated files.
