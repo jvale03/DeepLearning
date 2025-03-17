@@ -6,7 +6,7 @@ __pycache__/
 
 src/data_processor/custom_tokenizer/
 
-
+/datasets
 
 # C extensions
 *.so
