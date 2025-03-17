@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 
+src/data_processor/custom_tokenizer/
 
 datasets/dataset_test.csv
 datasets/dataset_train.csv
