@@ -62,10 +62,6 @@ class RecurrentNeuralNetwork:
         return error
     
     def reshape_for_rnn(self, X):
-        #print(f"In reshape_for_rnn: X shape = {X.shape}")
-        
-        # When using EmbeddingLayer, we don't need to add an extra dimension
-        # Just return X as is, since EmbeddingLayer will add the embedding dimension
         return X
     
     def fit(self, dataset, validation_data=None, patience=5):
@@ -225,8 +221,6 @@ if __name__ == '__main__':
     # Plot training history
     plot_history(rnn.history)
     
-    # Save model automatically in case of successful training
-    # You can also add an intermediate save after each epoch if needed
     save_model = input("Do you want to save the model? [y/n]: ")
     if save_model.lower() == 'y':
         rnn.save("models/rnn_model.pkl")

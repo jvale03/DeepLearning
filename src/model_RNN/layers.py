@@ -254,13 +254,13 @@ class RNNLayer(Layer):
         2 initialization methods under -> choose 1 only
         '''
         '''
-        # Initialize weights randomly
+        # Initializing weights randomly
         self.W = np.random.randn(self.n_units, n_inputs)
         self.U = np.random.randn(self.n_units, self.n_units)
         self.b = np.random.randn(self.n_units)
         '''
 
-        # Initialize weights 'randomly' but with Xavier/Glorot initialization (helps preventing vanishing/exploding gradients)
+        # Initializing weights 'randomly' but with Xavier/Glorot initialization (helps preventing vanishing/exploding gradients)
         self.W = np.random.randn(self.n_units, n_inputs) * np.sqrt(2.0 / (n_inputs + self.n_units))
         self.U = np.random.randn(self.n_units, self.n_units) * np.sqrt(2.0 / (self.n_units + self.n_units))
         self.b = np.zeros((self.n_units,))
@@ -274,10 +274,10 @@ class RNNLayer(Layer):
     
     def forward_propagation(self, inputs, training=True):
         
-        # Handle 4D input from EmbeddingLayer (batch_size, seq_len, feature_dim, embedding_dim)
+        # Handling 4D input from EmbeddingLayer (batch_size, seq_len, feature_dim, embedding_dim)
         if len(inputs.shape) == 4:
             batch_size, sequence_length, feature_dim, embedding_dim = inputs.shape
-            # Reshape to 3D by combining feature_dim and embedding_dim
+            # Reshaping to 3D by combining feature_dim and embedding_dim
             inputs = inputs.reshape(batch_size, sequence_length, feature_dim * embedding_dim)
         
         batch_size, sequence_length, n_features = inputs.shape
@@ -286,13 +286,12 @@ class RNNLayer(Layer):
         self.outputs = []
 
         for t in range(sequence_length):
-                x_t = inputs[:, t, :]  # Shape: (batch_size, n_features)
-                h_prev = self.states[-1]  # Shape: (batch_size, n_units)
+                x_t = inputs[:, t, :] 
+                h_prev = self.states[-1]
                 
-                # Vectorized operation for the entire batch
                 h_t = np.tanh(
-                    np.dot(x_t, self.W.T) +  # Note W transposition for batch operation
-                    np.dot(h_prev, self.U.T) +  # Note U transposition for batch operation
+                    np.dot(x_t, self.W.T) +
+                    np.dot(h_prev, self.U.T) +
                     self.b
                 )
                 self.states.append(h_t)
