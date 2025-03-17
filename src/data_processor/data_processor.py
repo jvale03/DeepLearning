@@ -25,7 +25,7 @@ def reshape_df(df):
 
 def clean_text(text: str) -> str:
     text = text.lower()
-    text = re.sub(r'[^a-z\s.,]', '', text)  # Mantém letras, espaços, pontos e vírgulas
+    text = re.sub(r'[^a-z\s]', '', text)  # Mantém letras, espaços, pontos e vírgulas
     return text
 
 def load_tokenizer():
@@ -45,8 +45,8 @@ def create_tokenizer(df):
     custom_tokenizer = BertWordPieceTokenizer(lowercase=True)
     custom_tokenizer.train(
         files=[corpus_file],
-        vocab_size=5000,
-        min_frequency=5,
+        vocab_size=7500,
+        min_frequency=7,
         show_progress=True,
         special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
     )
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     tokenizer = create_tokenizer(df)
 
     df = process_text(df,tokenizer)
-
-    split_data(df)
+    df = df[["Text","Label"]]
+    df.to_csv("../../datasets/dataset_processed.csv",index=False)
+    #split_data(df)
     print("Done data processor")

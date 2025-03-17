@@ -6,10 +6,12 @@ from metrics import accuracy
 from data import read_parquet, read_csv
 from activation import SigmoidActivation, ReLUActivation
 import pickle
-from visualization import plot_history
+# from visualization import plot_history  # Removido, pois o histórico não será armazenado
 
 train_file = '../../datasets/dataset_train.csv'
 test_file = '../../datasets/dataset_test.csv'
+final_file = '../../datasets/dataset_processed.csv'
+
 
 class DeepNeuralNetwork:
     def __init__(self, epochs=100, batch_size=128, optimizer=None,
@@ -23,7 +25,7 @@ class DeepNeuralNetwork:
         self.metric = metric
 
         self.layers = []
-        self.history = {}
+        # Histórico removido
 
     def add(self, layer):
         if self.layers:
@@ -61,12 +63,9 @@ class DeepNeuralNetwork:
         if np.ndim(y) == 1:
             y = np.expand_dims(y, axis=1)
 
-        self.history = {'train_loss': [], 'train_metric': [], 'val_loss': [], 'val_metric': []}
-
         best_val_loss = float('inf')
         patience_counter = 0
         best_weights = None
-
 
         for epoch in range(1, self.epochs + 1):
             train_loss, train_metric = 0, 0
@@ -83,17 +82,11 @@ class DeepNeuralNetwork:
             train_loss /= batch_count
             train_metric /= batch_count
 
-            self.history['train_loss'].append(train_loss)
-            self.history['train_metric'].append(train_metric)
-
             val_loss, val_metric = None, None
             if validation_data:
                 val_output = self.predict(validation_data)
                 val_loss = self.loss.loss(validation_data.y, val_output)
                 val_metric = self.metric(validation_data.y, val_output)
-
-                self.history['val_loss'].append(val_loss)
-                self.history['val_metric'].append(val_metric)
 
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
@@ -110,8 +103,11 @@ class DeepNeuralNetwork:
                     break
 
             if self.verbose:
-                print(f"Epoch {epoch}/{self.epochs} - loss: {train_loss:.4f} - accuracy: {train_metric:.4f} "
-                      f"- val_loss: {val_loss:.4f} - val_accuracy: {val_metric:.4f}")
+                if validation_data:
+                    print(f"Epoch {epoch}/{self.epochs} - loss: {train_loss:.4f} - accuracy: {train_metric:.4f} "
+                          f"- val_loss: {val_loss:.4f} - val_accuracy: {val_metric:.4f}")
+                else:
+                    print(f"Epoch {epoch}/{self.epochs} - loss: {train_loss:.4f} - accuracy: {train_metric:.4f}")
         return self
 
     def predict(self, dataset):
@@ -135,21 +131,24 @@ class DeepNeuralNetwork:
         return model
 
 if __name__ == '__main__':
-    train_data = read_csv(train_file)
-    test_data = read_csv(test_file)
+    # train_data = read_csv(train_file)
+    # test_data = read_csv(test_file)
+    final_data = read_csv(final_file)
+    
 
-
-    net = DeepNeuralNetwork(epochs=30, batch_size=32, learning_rate=0.001, verbose=True,
+    net = DeepNeuralNetwork(epochs=12, batch_size=32, learning_rate=0.003, verbose=True,
                             loss=BinaryCrossEntropy, metric=accuracy)
 
-    n_features = train_data.X.shape[1]
+    n_features = final_data.X.shape[1]
 
-    net.add(EmbeddingLayer(vocab_size=5000, embedding_dim=8, input_shape=(n_features,)))
+    net.add(EmbeddingLayer(vocab_size=7500, embedding_dim=16, input_shape=(n_features,)))
     net.add(GlobalAveragePooling1D())
+    
 
     net.add(DenseLayer(32, l2=0.01))
+    net.add(BatchNormalizationLayer())
     net.add(ReLUActivation())
-    net.add(DropoutLayer(0.2))
+    net.add(DropoutLayer(0.3))
 
     net.add(DenseLayer(16, l2=0.02))
     net.add(ReLUActivation())
@@ -158,8 +157,8 @@ if __name__ == '__main__':
     net.add(DenseLayer(1))  
     net.add(SigmoidActivation())
 
-    net.fit(train_data, validation_data=test_data, patience=10)
-    plot_history(net.history)
+    net.fit(final_data, patience=20)
+    # plot_history(net.history)  # Removido, pois o histórico não é mais utilizado
 
     while True:
         opt = input("Queres guardar? [y/n]")
