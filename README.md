@@ -24,6 +24,10 @@ Project/
 │       ├── fetchScienceData.py
 │       └── convertCsv.py
 │
+├── datasets/
+|
+├── models/
+|
 ├── src/
 │   ├── data_processor/
 │   │   ├── data_processor.py
@@ -61,6 +65,12 @@ This module is responsible for collecting research papers from arXiv. It starts 
 
 ### `dataset-generator/lexicalParser/`
 This module extracts relevant scientific information based on predefined keywords and converts the extracted data into a structured format, such as CSV, for further analysis.
+
+### `datasets/`
+Stores the datasets used by the neural networks for both training and testing.
+
+### `models/`
+Stores the trained models generated after running the neural networks.
 
 ### `src/data_processor/`
 Handles text preprocessing, including tokenization and structuring of data, to prepare it for model training. It ensures the input data is clean and usable for deep learning models.
