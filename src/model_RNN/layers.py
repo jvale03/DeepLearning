@@ -253,18 +253,17 @@ class RNNLayer(Layer):
         '''
         2 initialization methods under -> choose 1 only
         '''
-        
+        '''
         # Initialize weights randomly
         self.W = np.random.randn(self.n_units, n_inputs)
         self.U = np.random.randn(self.n_units, self.n_units)
         self.b = np.random.randn(self.n_units)
-
         '''
+
         # Initialize weights 'randomly' but with Xavier/Glorot initialization (helps preventing vanishing/exploding gradients)
         self.W = np.random.randn(self.n_units, n_inputs) * np.sqrt(2.0 / (n_inputs + self.n_units))
         self.U = np.random.randn(self.n_units, self.n_units) * np.sqrt(2.0 / (self.n_units + self.n_units))
         self.b = np.zeros((self.n_units,))
-        '''
 
         # Creating optimizers for each parameter
         self.W_opt = copy.deepcopy(optimizer)
@@ -274,31 +273,30 @@ class RNNLayer(Layer):
         return self
     
     def forward_propagation(self, inputs, training=True):
-        '''
-        inputs: Input data with shape (batch_size, sequence_length, n_features)
-        '''
-        # Getting the info out of the inputs var
+        
+        # Handle 4D input from EmbeddingLayer (batch_size, seq_len, feature_dim, embedding_dim)
+        if len(inputs.shape) == 4:
+            batch_size, sequence_length, feature_dim, embedding_dim = inputs.shape
+            # Reshape to 3D by combining feature_dim and embedding_dim
+            inputs = inputs.reshape(batch_size, sequence_length, feature_dim * embedding_dim)
+        
         batch_size, sequence_length, n_features = inputs.shape
         self.inputs = inputs
         self.states = [np.zeros((batch_size, self.n_units))] # Initial hidden state
         self.outputs = []
 
         for t in range(sequence_length):
-            # Getting the current input
-            x_t = inputs[:, t, :]
-            # Getting the previous hidden state
-            h_prev = self.states[-1]
-
-            # Calculating the hidden state for this timestep for each batch
-            h_t = np.zeros((batch_size, self.n_units))
-            for i in range(batch_size):
-                h_t[i] = np.tanh(
-                    np.dot(self.W, x_t[i]) + 
-                    np.dot(self.U, h_prev[i]) +
+                x_t = inputs[:, t, :]  # Shape: (batch_size, n_features)
+                h_prev = self.states[-1]  # Shape: (batch_size, n_units)
+                
+                # Vectorized operation for the entire batch
+                h_t = np.tanh(
+                    np.dot(x_t, self.W.T) +  # Note W transposition for batch operation
+                    np.dot(h_prev, self.U.T) +  # Note U transposition for batch operation
                     self.b
                 )
-            self.states.append(h_t)
-            self.outputs.append(h_t)
+                self.states.append(h_t)
+                self.outputs.append(h_t)
 
         if self.return_sequences:
             # Returning the output for each timestep
