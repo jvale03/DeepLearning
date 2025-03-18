@@ -1,6 +1,7 @@
 import pandas as pd
 import spacy
 import re
+import csv
 from tqdm import tqdm
 
 # Load spaCy NLP model
@@ -37,45 +38,52 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces
     return text
 
-def extract_relevant_sentences(text):
-    """Extract sentences containing keywords."""
+def contains_relevant_keywords(text):
+    """Check if the text contains any relevant keywords."""
     doc = nlp(text)
-    relevant_sentences = []
     for sent in doc.sents:
         sentence_text = sent.text.strip()
         for keywords in KEYWORDS.values():
             if any(keyword in sentence_text.lower() for keyword in keywords):
-                relevant_sentences.append(sentence_text)
-                break  # Avoid duplicate matches
-    return relevant_sentences
+                return True  # If any sentence contains a keyword, return True
+    return False  # If no sentence contains a keyword, return False
 
-def process_parquet(input_file, output_txt, batch_size=1000, start_batch=100):
-    """Process Parquet file in batches, starting from the specified batch, and append relevant sentences to output file."""
-    reader = pd.read_parquet(input_file, engine="pyarrow", columns=["text"])  # Read only 'text' column
+def process_csv(input_file, output_csv, batch_size=1000, start_batch=0):
+    """Process CSV file in batches, starting from the specified batch, and append relevant sentences to output CSV."""
+    reader = pd.read_csv(input_file, usecols=["text", "generated"])  # Read 'text' and 'generated' columns
 
     total_batches = (len(reader) + batch_size - 1) // batch_size  # Compute total batches
     tqdm.pandas(desc="Processing Text Entries")
 
-    # Open file in append mode
-    with open(output_txt, "a", encoding="utf-8") as f:
+    # Open output CSV in append mode
+    with open(output_csv, "a", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        
+        # Write header if the output CSV is empty
+        f.seek(0, 2)  # Move to the end of the file
+        if f.tell() == 0:  # Check if the file is empty
+            writer.writerow(["Text", "Label"])  # Write header row if file is empty
+
         for batch in tqdm(range(start_batch, total_batches), desc="Processing Batches"):
             batch_start = batch * batch_size
             batch_end = batch_start + batch_size
             chunk = reader.iloc[batch_start:batch_end].copy()
 
+            # Only process rows where 'generated' is 1
+            chunk = chunk[chunk['generated'] == 1]
+
             chunk["text"] = chunk["text"].astype(str).apply(clean_text)
-            chunk_sentences = chunk["text"].progress_apply(extract_relevant_sentences)
 
-            # Flatten sentences and write to file
-            sentences_to_write = [sentence for sentences in chunk_sentences for sentence in sentences]
-            if sentences_to_write:
-                f.write("\n".join(sentences_to_write) + "\n")
+            # Check if the cleaned text contains relevant keywords
+            for text, label in zip(chunk["text"], chunk["generated"]):
+                if contains_relevant_keywords(text):
+                    writer.writerow([text, label])
 
-    print(f"Extracted sentences from batch {start_batch} onwards appended to {output_txt}")
+    print(f"Processed sentences from batch {start_batch} onwards appended to {output_csv}")
 
 if __name__ == "__main__":
-    input_parquet = "filtered_data.parquet"
-    output_file = "all_sentences.txt"
-    start_batch = 1  # Start from batch 100
+    input_csv = "AI_Human.csv"  # Path to your input CSV file
+    output_csv = "output_data.csv"  # Path to your output CSV file
+    start_batch = 0  # Start from batch 0
 
-    process_parquet(input_parquet, output_file, batch_size=1000, start_batch=start_batch)
+    process_csv(input_csv, output_csv, batch_size=1000, start_batch=start_batch)
