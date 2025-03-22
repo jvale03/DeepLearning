@@ -178,3 +178,8 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 allPapers
+
+
+corpus.txt
+vocab.txt
+dataset_processed.csv
