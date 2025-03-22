@@ -21,7 +21,7 @@ def process_texts(texts):
 
 # Load the trained RNN model
 try:
-    rnn = RecurrentNeuralNetwork.load("models/rnn_model.pkl")
+    rnn = RecurrentNeuralNetwork.load("../../../models/rnn_model.pkl")
     print("RNN model loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")

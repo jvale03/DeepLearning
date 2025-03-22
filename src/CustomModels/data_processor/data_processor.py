@@ -9,7 +9,7 @@ import os
 
 corpus_file = "./custom_tokenizer/corpus.txt"
 
-file = "../../datasets/dataset.csv"
+file = "../../../datasets/final_dataset.csv"
 
 def reshape_df(df):
     category_mapping = {"Human": 0, "AI": 1, "student": 0}
@@ -90,6 +90,6 @@ if __name__ == "__main__":
 
     df = process_text(df,tokenizer)
     df = df[["Text","Label"]]
-    df.to_csv("../../datasets/dataset_processed.csv",index=False)
+    df.to_csv("../../../datasets/dataset_processed.csv",index=False)
     #split_data(df)
     print("Done data processor")

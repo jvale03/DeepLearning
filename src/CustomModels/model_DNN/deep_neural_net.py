@@ -8,9 +8,9 @@ from activation import SigmoidActivation, ReLUActivation
 import pickle
 # from visualization import plot_history  # Removido, pois o histórico não será armazenado
 
-train_file = '../../datasets/dataset_train.csv'
-test_file = '../../datasets/dataset_test.csv'
-final_file = '../../datasets/dataset_processed.csv'
+train_file = '../../../datasets/dataset_train.csv'
+test_file = '../../../datasets/dataset_test.csv'
+final_file = '../../../datasets/dataset_processed.csv'
 
 
 class DeepNeuralNetwork:
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     while True:
         opt = input("Queres guardar? [y/n]")
         if opt == "y":
-            net.save("../../models/modelo_dnn.pkl")
+            net.save("../../../models/modelo_dnn.pkl")
             break
         elif opt == "n":
             break
