@@ -3,14 +3,13 @@ from layers import DenseLayer, EmbeddingLayer, FlattenLayer, DropoutLayer, Batch
 from losses import BinaryCrossEntropy   
 from optimizer import Optimizer
 from metrics import accuracy
-from data import read_parquet, read_csv
+from data import read_csv
+from tokenizer import SimpleTokenizer
 from activation import SigmoidActivation, ReLUActivation
 import pickle
-# from visualization import plot_history  # Removido, pois o histórico não será armazenado
+import pandas as pd
 
-train_file = '../../../datasets/dataset_train.csv'
-test_file = '../../../datasets/dataset_test.csv'
-final_file = '../../../datasets/dataset_processed.csv'
+file = '../../../datasets/final_dataset.csv'
 
 
 class DeepNeuralNetwork:
@@ -131,34 +130,48 @@ class DeepNeuralNetwork:
         return model
 
 if __name__ == '__main__':
-    # train_data = read_csv(train_file)
-    # test_data = read_csv(test_file)
-    final_data = read_csv(final_file)
-    
+    print("Tokenizing csv...")
+    tokenizer = SimpleTokenizer(num_words=10000)
+    print("CSV tokenized!")
 
-    net = DeepNeuralNetwork(epochs=12, batch_size=32, learning_rate=0.003, verbose=True,
+    train_data, validation_data, test_data = read_csv(file, tokenizer)
+
+    net = DeepNeuralNetwork(epochs=25, batch_size=32, learning_rate=0.0005, verbose=True,
                             loss=BinaryCrossEntropy, metric=accuracy)
 
-    n_features = final_data.X.shape[1]
+    n_features = train_data.X.shape[1]
 
-    net.add(EmbeddingLayer(vocab_size=7500, embedding_dim=16, input_shape=(n_features,)))
+    net.add(EmbeddingLayer(vocab_size=10000, embedding_dim=128, input_shape=(n_features,)))
     net.add(GlobalAveragePooling1D())
     
 
-    net.add(DenseLayer(32, l2=0.01))
+    net.add(DenseLayer(64, l2=0.003))
+    net.add(ReLUActivation())
+    net.add(DropoutLayer(0.4))
     net.add(BatchNormalizationLayer())
-    net.add(ReLUActivation())
-    net.add(DropoutLayer(0.3))
 
-    net.add(DenseLayer(16, l2=0.02))
+    net.add(DenseLayer(32, l2=0.003))
     net.add(ReLUActivation())
-    net.add(DropoutLayer(0.3))
+    net.add(DropoutLayer(0.4))
+    net.add(BatchNormalizationLayer())
+
+    net.add(DenseLayer(16, l2=0.003))
+    net.add(ReLUActivation())
+    net.add(DropoutLayer(0.5))
+
+    net.add(DenseLayer(8, l2=0.003))
+    net.add(ReLUActivation())
+    net.add(DropoutLayer(0.5))
 
     net.add(DenseLayer(1))  
     net.add(SigmoidActivation())
 
-    net.fit(final_data, patience=20)
-    # plot_history(net.history)  # Removido, pois o histórico não é mais utilizado
+    net.fit(train_data,validation_data=validation_data, patience=20)
+
+    test_predictions = net.predict(test_data)
+    test_score = net.score(test_data, test_predictions)
+    print(f"Accuracy no dataset de teste: {test_score:.4f}")
+
 
     while True:
         opt = input("Queres guardar? [y/n]")
@@ -167,3 +180,6 @@ if __name__ == '__main__':
             break
         elif opt == "n":
             break
+
+
+
