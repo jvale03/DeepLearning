@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import ast
 
 class Data:
     def __init__(self, X, y=None, features=None, label=None):
@@ -59,8 +58,7 @@ def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_rati
 
 
 
-def new_read_csv(filename, tokenizer, sequence_length=128):
-    data = pd.read_csv(filename)
+def read_csv_once(data, tokenizer, sequence_length=128):
 
     if data.shape[1] != 2:
         raise ValueError("O dataset deve ter exatamente duas colunas: uma independente e uma dependente.")
