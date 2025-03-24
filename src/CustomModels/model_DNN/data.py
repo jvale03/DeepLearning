@@ -18,9 +18,26 @@ class Data:
         self.features = features
         self.label = label
 
+def stratified_split(X, y, train_ratio=0.7, val_ratio=0.15):
+    unique_labels, label_counts = np.unique(y, return_counts=True)
+    train_idx, val_idx, test_idx = [], [], []
+    
+    for label in unique_labels:
+        label_indices = np.where(y == label)[0]
+        np.random.shuffle(label_indices)
+        
+        train_size = int(len(label_indices) * train_ratio)
+        val_size = int(len(label_indices) * val_ratio)
+        
+        train_idx.extend(label_indices[:train_size])
+        val_idx.extend(label_indices[train_size:train_size+val_size])
+        test_idx.extend(label_indices[train_size+val_size:])
+    
+    return np.array(train_idx), np.array(val_idx), np.array(test_idx)
+
 def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_ratio=0.15):
     data = pd.read_csv(filename)
-
+    
     if data.shape[1] != 2:
         raise ValueError("O dataset deve ter exatamente duas colunas: uma independente e uma dependente.")
     
@@ -36,14 +53,8 @@ def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_rati
         length = min(len(seq), sequence_length)
         X[i, :length] = seq[:length]
     
-    # Divisão dos dados
-    total_samples = X.shape[0]
-    train_size = int(total_samples * train_ratio)
-    val_size = int(total_samples * val_ratio)
-    test_size = total_samples - train_size - val_size
-    
-    indices = np.random.permutation(total_samples)
-    train_idx, val_idx, test_idx = indices[:train_size], indices[train_size:train_size+val_size], indices[train_size+val_size:]
+    # Divisão estratificada
+    train_idx, val_idx, test_idx = stratified_split(X, labels, train_ratio, val_ratio)
     
     X_train, y_train = X[train_idx], labels[train_idx]
     X_val, y_val = X[val_idx], labels[val_idx]
