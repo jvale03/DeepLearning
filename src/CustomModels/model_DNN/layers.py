@@ -300,3 +300,168 @@ class GlobalAveragePooling1D(Layer):
 
     def parameters(self):
         return 0  # Camada sem parâmetros treináveis
+
+
+
+class gru_layer(Layer):
+    def __init__(self, n_units, input_shape=None):
+        super().__init__()
+        self.n_units = n_units
+        self._input_shape = input_shape
+
+    def initialize(self, optimizer):
+        # Determina a dimensão de entrada (assume-se que inputs tem shape (batch, seq_len, input_dim))
+        input_dim = self.input_shape()[-1]
+        # Inicialização dos pesos para os 3 componentes da GRU: atualização (z), reset (r) e candidato (h_tilde)
+        self.w_z = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_z = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_z = np.zeros((1, self.n_units))
+        
+        self.w_r = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_r = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_r = np.zeros((1, self.n_units))
+        
+        self.w_h = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_h = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_h = np.zeros((1, self.n_units))
+        
+        # Cria cópias do otimizador para cada conjunto de pesos
+        self.w_z_opt = copy.deepcopy(optimizer)
+        self.u_z_opt = copy.deepcopy(optimizer)
+        self.b_z_opt = copy.deepcopy(optimizer)
+        self.w_r_opt = copy.deepcopy(optimizer)
+        self.u_r_opt = copy.deepcopy(optimizer)
+        self.b_r_opt = copy.deepcopy(optimizer)
+        self.w_h_opt = copy.deepcopy(optimizer)
+        self.u_h_opt = copy.deepcopy(optimizer)
+        self.b_h_opt = copy.deepcopy(optimizer)
+        return self
+
+    def forward_propagation(self, inputs, training=True):
+        # inputs shape: (batch_size, seq_len, input_dim)
+        self.inputs = inputs
+        batch_size, seq_len, _ = inputs.shape
+        # h_states guarda os estados ocultos; inicia com zeros para h0
+        self.h_states = np.zeros((batch_size, seq_len + 1, self.n_units))
+        # Guarda os valores dos gates para possível uso na retropropagação
+        self.z_list = []
+        self.r_list = []
+        self.h_tilde_list = []
+        for t in range(seq_len):
+            x_t = inputs[:, t, :]
+            h_prev = self.h_states[:, t, :]
+            # Gate de atualização (z)
+            z_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_z) + np.dot(h_prev, self.u_z) + self.b_z)))
+            # Gate de reset (r)
+            r_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_r) + np.dot(h_prev, self.u_r) + self.b_r)))
+            # Cálculo do estado candidato (h_tilde)
+            h_tilde = np.tanh(np.dot(x_t, self.w_h) + np.dot(r_t * h_prev, self.u_h) + self.b_h)
+            # Atualização do estado oculto
+            h_t = (1 - z_t) * h_prev + z_t * h_tilde
+            self.h_states[:, t + 1, :] = h_t
+            self.z_list.append(z_t)
+            self.r_list.append(r_t)
+            self.h_tilde_list.append(h_tilde)
+        self.output = self.h_states[:, -1, :]  # saída é o último estado oculto
+        return self.output
+
+    def backward_propagation(self, output_error):
+        dx = np.zeros_like(self.inputs)
+        return dx
+
+    def output_shape(self):
+        # A saída tem dimensão (n_units,)
+        return (self.n_units,)
+
+    def parameters(self):
+        total_params = (self.w_z.size + self.u_z.size + self.b_z.size +
+                        self.w_r.size + self.u_r.size + self.b_r.size +
+                        self.w_h.size + self.u_h.size + self.b_h.size)
+        return total_params
+
+
+class lstm_layer(Layer):
+    def __init__(self, n_units, input_shape=None):
+        super().__init__()
+        self.n_units = n_units
+        self._input_shape = input_shape
+
+    def initialize(self, optimizer):
+        input_dim = self.input_shape()[-1]
+        self.w_i = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_i = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_i = np.zeros((1, self.n_units))
+        
+        self.w_f = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_f = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_f = np.zeros((1, self.n_units))
+        
+        self.w_o = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_o = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_o = np.zeros((1, self.n_units))
+        
+        self.w_c = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
+        self.u_c = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        self.b_c = np.zeros((1, self.n_units))
+        
+        self.w_i_opt = copy.deepcopy(optimizer)
+        self.u_i_opt = copy.deepcopy(optimizer)
+        self.b_i_opt = copy.deepcopy(optimizer)
+        self.w_f_opt = copy.deepcopy(optimizer)
+        self.u_f_opt = copy.deepcopy(optimizer)
+        self.b_f_opt = copy.deepcopy(optimizer)
+        self.w_o_opt = copy.deepcopy(optimizer)
+        self.u_o_opt = copy.deepcopy(optimizer)
+        self.b_o_opt = copy.deepcopy(optimizer)
+        self.w_c_opt = copy.deepcopy(optimizer)
+        self.u_c_opt = copy.deepcopy(optimizer)
+        self.b_c_opt = copy.deepcopy(optimizer)
+        return self
+
+    def forward_propagation(self, inputs, training=True):
+        self.inputs = inputs
+        batch_size, seq_len, _ = inputs.shape
+        self.h_states = np.zeros((batch_size, seq_len + 1, self.n_units))
+        self.c_states = np.zeros((batch_size, seq_len + 1, self.n_units))
+        self.i_list = []
+        self.f_list = []
+        self.o_list = []
+        self.c_tilde_list = []
+        for t in range(seq_len):
+            x_t = inputs[:, t, :]
+            h_prev = self.h_states[:, t, :]
+            c_prev = self.c_states[:, t, :]
+            # Porta de entrada
+            i_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_i) + np.dot(h_prev, self.u_i) + self.b_i)))
+            # Porta de esquecimento
+            f_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_f) + np.dot(h_prev, self.u_f) + self.b_f)))
+            # Porta de saída
+            o_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_o) + np.dot(h_prev, self.u_o) + self.b_o)))
+            # Candidato a célula
+            c_tilde = np.tanh(np.dot(x_t, self.w_c) + np.dot(h_prev, self.u_c) + self.b_c)
+            # Atualiza a célula
+            c_t = f_t * c_prev + i_t * c_tilde
+            # Estado oculto
+            h_t = o_t * np.tanh(c_t)
+            self.h_states[:, t + 1, :] = h_t
+            self.c_states[:, t + 1, :] = c_t
+            self.i_list.append(i_t)
+            self.f_list.append(f_t)
+            self.o_list.append(o_t)
+            self.c_tilde_list.append(c_tilde)
+        self.output = self.h_states[:, -1, :]  # saída final: último estado oculto
+        return self.output
+
+    def backward_propagation(self, output_error):
+        dx = np.zeros_like(self.inputs)
+        return dx
+
+    def output_shape(self):
+        return (self.n_units,)
+
+    def parameters(self):
+        total_params = (self.w_i.size + self.u_i.size + self.b_i.size +
+                        self.w_f.size + self.u_f.size + self.b_f.size +
+                        self.w_o.size + self.u_o.size + self.b_o.size +
+                        self.w_c.size + self.u_c.size + self.b_c.size)
+        return total_params
