@@ -18,7 +18,9 @@ class Data:
         self.features = features
         self.label = label
 
-def stratified_split(X, y, train_ratio=0.7, val_ratio=0.15):
+def stratified_split(X, y, train_ratio=0.7, val_ratio=0.15, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     unique_labels, label_counts = np.unique(y, return_counts=True)
     train_idx, val_idx, test_idx = [], [], []
     
@@ -35,7 +37,7 @@ def stratified_split(X, y, train_ratio=0.7, val_ratio=0.15):
     
     return np.array(train_idx), np.array(val_idx), np.array(test_idx)
 
-def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_ratio=0.15):
+def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_ratio=0.15, seed=None):
     data = pd.read_csv(filename)
     
     if data.shape[1] != 2:
@@ -43,6 +45,9 @@ def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_rati
     
     texts = data.iloc[:, 0].astype(str).tolist()
     labels = data.iloc[:, 1].astype(np.float32).to_numpy()
+
+    if hasattr(tokenizer, 'seed') and tokenizer.seed is None and seed is not None:
+        tokenizer.seed = seed
     
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
@@ -54,7 +59,7 @@ def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_rati
         X[i, :length] = seq[:length]
     
     # Divisão estratificada
-    train_idx, val_idx, test_idx = stratified_split(X, labels, train_ratio, val_ratio)
+    train_idx, val_idx, test_idx = stratified_split(X, labels, train_ratio, val_ratio, seed=seed)
     
     X_train, y_train = X[train_idx], labels[train_idx]
     X_val, y_val = X[val_idx], labels[val_idx]
@@ -69,7 +74,10 @@ def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_rati
 
 
 
-def read_csv_once(data, tokenizer, sequence_length=128):
+def read_csv_once(data, tokenizer, sequence_length=128, seed=None):
+
+    if hasattr(tokenizer, 'seed') and tokenizer.seed is None and seed is not None:
+        tokenizer.seed = seed
 
     if data.shape[1] != 2:
         raise ValueError("O dataset deve ter exatamente duas colunas: uma independente e uma dependente.")

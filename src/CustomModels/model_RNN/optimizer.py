@@ -2,10 +2,14 @@ import numpy as np
 
 class Optimizer:
 
-    def __init__(self, learning_rate = 0.01,  momentum = 0.90):
+    def __init__(self, learning_rate = 0.01,  momentum = 0.90, seed=None):
         self.retained_gradient = {}
         self.learning_rate = learning_rate
         self.momentum = momentum
+        self.seed = seed
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
  
     def update(self, w, grad_loss_w):
         w_id = id(w)

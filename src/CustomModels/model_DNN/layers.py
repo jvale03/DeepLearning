@@ -3,6 +3,13 @@ import numpy as np
 import copy
 
 class Layer(ABC):
+    def __init__(self):
+        self.seed = None
+
+    def set_seed(self, seed):
+        self.seed = seed
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
     @abstractmethod
     def forward_propagation(self, inputs, training=True):
@@ -43,6 +50,11 @@ class DenseLayer(Layer):
         self.biases = None
         
     def initialize(self, optimizer):
+        # Set seed before random initialization
+        if hasattr(self, '_seed') and self._seed is not None:
+            np.random.seed(self._seed)
+        elif hasattr(optimizer, 'seed') and optimizer.seed is not None:
+            np.random.seed(optimizer.seed)
         n_inputs = self.input_shape()[0] if self.input_shape() else 1
         self.weights = np.random.randn(n_inputs, self.n_units) * np.sqrt(2.0 / n_inputs)
         self.biases = np.zeros((1, self.n_units))
@@ -84,6 +96,11 @@ class EmbeddingLayer(Layer):
         self.output = None
 
     def initialize(self, optimizer):
+        # Set seed before random initialization
+        if hasattr(self, '_seed') and self._seed is not None:
+            np.random.seed(self._seed)
+        elif hasattr(optimizer, 'seed') and optimizer.seed is not None:
+            np.random.seed(optimizer.seed)
         self.embeddings = np.random.randn(self.vocab_size, self.embedding_dim) * 0.01
         self.emb_opt = copy.deepcopy(optimizer)
         return self
@@ -143,10 +160,11 @@ class DropoutLayer(Layer):
     def forward_propagation(self, inputs, training=True):
         self.input = inputs
         if training:
+            if hasattr(self, '_seed') and self._seed is not None:
+                np.random.seed(self._seed)
             self.mask = np.random.binomial(1, 1 - self.dropout_rate, size=inputs.shape) / (1 - self.dropout_rate)
-        else:
-            self.mask = 1  # Mantém os valores inalterados durante a inferência
-        return inputs * self.mask
+            return inputs * self.mask
+        return inputs
 
     def backward_propagation(self, output_error):
         return output_error * self.mask if self.mask is not None else output_error

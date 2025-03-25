@@ -15,10 +15,14 @@ file = '../../../datasets/final_dataset.csv'
 class DeepNeuralNetwork:
     def __init__(self, epochs=100, batch_size=128, optimizer=None,
                  learning_rate=0.01, momentum=0.90, verbose=True, 
-                 loss=BinaryCrossEntropy, metric: callable = accuracy):
+                 loss=BinaryCrossEntropy, metric: callable = accuracy, seed=None):
+
+        self.seed = seed
+        if self.seed is not None:
+            np.random.seed(self.seed)
         self.epochs = epochs
         self.batch_size = batch_size
-        self.optimizer = Optimizer(learning_rate=learning_rate, momentum=momentum)
+        self.optimizer = Optimizer(learning_rate=learning_rate, momentum=momentum, seed=self.seed)
         self.verbose = verbose
         self.loss = loss()
         self.metric = metric
@@ -27,16 +31,24 @@ class DeepNeuralNetwork:
         # Histórico removido
 
     def add(self, layer):
-        if self.layers:
-            layer.set_input_shape(input_shape=self.layers[-1].output_shape())
-        if hasattr(layer, 'initialize'):
-            layer.initialize(self.optimizer)
-        self.layers.append(layer)
-        return self
+            if hasattr(layer, 'set_seed') and self.seed is not None:
+                layer.set_seed(self.seed)
+                
+            if self.layers:
+                layer.set_input_shape(input_shape=self.layers[-1].output_shape())
+                
+            if hasattr(layer, 'initialize'):
+                layer.initialize(self.optimizer)
+                
+            self.layers.append(layer)
+            return self
 
     def get_mini_batches(self, X, y=None, shuffle=True):
         n_samples = X.shape[0]
         assert self.batch_size <= n_samples, "Batch size cannot be greater than the number of samples"
+
+        if self.seed is not None and shuffle:
+            np.random.seed(self.seed)
         
         indices = np.random.permutation(n_samples) if shuffle else np.arange(n_samples)
         
@@ -58,6 +70,8 @@ class DeepNeuralNetwork:
         return output_error
 
     def fit(self, dataset, validation_data=None, patience=3):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         X, y = dataset.X, dataset.y
         if np.ndim(y) == 1:
             y = np.expand_dims(y, axis=1)

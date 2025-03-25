@@ -4,16 +4,21 @@ from collections import Counter
 from itertools import chain
 
 class SimpleTokenizer:
-    def __init__(self, num_words=None, lower=True, split=" "):
-
+    def __init__(self, num_words=None, lower=True, split=" ", seed=None):
         self.num_words = num_words
         self.lower = lower
         self.split = split
         self.word_index = {}   # mapeamento palavra -> índice
         self.index_word = {}   # mapeamento índice -> palavra
         self.word_counts = {}  # contagem de ocorrência das palavras
+        self.seed = seed
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
     def fit_on_texts(self, texts):
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         for text in texts:
             if self.lower:
@@ -36,6 +41,8 @@ class SimpleTokenizer:
         self.index_word = {i+1: word for i, (word, count) in enumerate(sorted_words)}
 
     def texts_to_sequences(self, texts):
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         sequences = []
         for text in texts:
@@ -49,14 +56,20 @@ class SimpleTokenizer:
 
 
 class RobustTokenizer:
-    def __init__(self, num_words=None, lower=True):
+    def __init__(self, num_words=None, lower=True, seed=None):
         self.num_words = num_words
         self.lower = lower
         self.word_index = {}   # mapeamento palavra -> índice
         self.index_word = {}   # mapeamento índice -> palavra
         self.word_counts = {}  # contagem de ocorrência das palavras
+        self.seed = seed
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
     def tokenize_text(self, text):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Tokeniza o texto utilizando expressão regular para capturar palavras."""
         if self.lower:
             text = text.lower()
@@ -65,6 +78,8 @@ class RobustTokenizer:
         return tokens
 
     def fit_on_texts(self, texts):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Constroi o vocabulário com base na frequência das palavras."""
         for text in texts:
             tokens = self.tokenize_text(text)
@@ -82,6 +97,8 @@ class RobustTokenizer:
         self.index_word = {i+1: word for i, (word, count) in enumerate(sorted_words)}
 
     def texts_to_sequences(self, texts):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Converte os textos em sequências de inteiros com base no vocabulário construído."""
         sequences = []
         for text in texts:
@@ -94,7 +111,7 @@ class RobustTokenizer:
 
 
 class AdvancedTokenizer:
-    def __init__(self, num_words=None, lower=True, ngrams=(1, 2), remove_stopwords=False, stopwords_list=None):
+    def __init__(self, num_words=None, lower=True, ngrams=(1, 2), remove_stopwords=False, stopwords_list=None, seed=42):
         self.num_words = num_words
         self.lower = lower
         self.ngrams = ngrams  
@@ -102,11 +119,17 @@ class AdvancedTokenizer:
         self.word_counts = Counter()
         self.word_index = {}
         self.index_word = {}
+        self.seed = seed
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         # Stopwords personalizadas
         self.stopwords = set(stopwords_list) if stopwords_list else set()
 
     def tokenize_text(self, text):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Tokeniza o texto, removendo pontuação e aplicando regex aprimorado."""
         if self.lower:
             text = text.lower()
@@ -120,10 +143,14 @@ class AdvancedTokenizer:
         return tokens
 
     def generate_ngrams(self, tokens):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Gera unigramas, bigramas, trigramas, etc."""
         return [' '.join(tokens[i:i+n]) for n in self.ngrams for i in range(len(tokens) - n + 1)]
 
     def fit_on_texts(self, texts):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Cria o vocabulário baseado na frequência das palavras e n-grams."""
         for text in texts:
             tokens = self.tokenize_text(text)
@@ -137,6 +164,8 @@ class AdvancedTokenizer:
         self.index_word = {i+1: word for i, word in enumerate(sorted_words)}
 
     def texts_to_sequences(self, texts, max_len=100):
+        if self.seed is not None:
+            np.random.seed(self.seed)
         """Converte textos em sequências numéricas e aplica padding/truncamento."""
         sequences = []
         for text in texts:
