@@ -4,9 +4,13 @@ from activation import SigmoidActivation, ReLUActivation
 from losses import BinaryCrossEntropy
 from optimizer import Optimizer
 from metrics import accuracy
-from data import read_parquet, read_csv
+from data import read_csv
 import pickle
 from visualization import plot_history
+from tokenizer import SimpleTokenizer
+
+file = '../../../datasets/final_dataset.csv'
+
 
 class RecurrentNeuralNetwork:
     def __init__(self, epochs=100, batch_size=32, optimizer=None, 
@@ -165,11 +169,10 @@ class RecurrentNeuralNetwork:
         X = self.reshape_for_rnn(X)
         return self.forward_propagation(X, training=False)
     
-    def score(self,dataset):
-        predictions = self.predict(dataset)
+    def score(self, dataset, predictions):
         if self.metric is not None:
             return self.metric(dataset.y, predictions)
-        raise ValueError("No metric specified for the neural network")
+        raise ValueError("No metric specified for the neural network.")
     
     def save(self, file_path):
         with open(file_path, 'wb') as f:
@@ -186,13 +189,15 @@ class RecurrentNeuralNetwork:
 if __name__ == '__main__':
     print('Started')
 
-    train_file = '../../../datasets/dataset_train.csv'
-    test_file = '../../../datasets/dataset_test.csv'
-    train_data = read_csv(train_file)
-    test_data = read_csv(test_file)
+    print("Tokenizing csv...")
+    tokenizer = SimpleTokenizer(num_words=10000)
+    print("CSV tokenized!")
+
+    train_data, validation_data, test_data = read_csv(file, tokenizer)
+
     # Creating a RNN model
     rnn = RecurrentNeuralNetwork(
-        epochs=20,
+        epochs=3,
         batch_size=32,
         learning_rate=0.01,
         momentum=0.9,
@@ -202,7 +207,7 @@ if __name__ == '__main__':
     print('Created model architecture')
     n_features = train_data.X.shape[1]
     # Build RNN architecture
-    rnn.add(EmbeddingLayer(vocab_size=7500, embedding_dim=8, input_shape=(n_features,)))
+    rnn.add(EmbeddingLayer(vocab_size=10000, embedding_dim=8, input_shape=(n_features,)))
     rnn.add(RNNLayer(32, return_sequences=True, bptt_trunc=None))
     rnn.add(RNNLayer(16, return_sequences=False, bptt_trunc=None))
     rnn.add(BatchNormalizationLayer())
@@ -215,11 +220,16 @@ if __name__ == '__main__':
     print('Added layers to model')
     
     # Train the model
-    rnn.fit(train_data, validation_data=test_data, patience=5)
+    rnn.fit(train_data, validation_data=validation_data, patience=5)
     print('Model trained')
     
     # Plot training history
     plot_history(rnn.history)
+
+    test_predictions = rnn.predict(test_data)
+    test_score = rnn.score(test_data, test_predictions)
+    print(f"Accuracy no dataset de teste: {test_score:.4f}")
+
     
     save_model = input("Do you want to save the model? [y/n]: ")
     if save_model.lower() == 'y':
