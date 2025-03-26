@@ -302,27 +302,41 @@ class GlobalAveragePooling1D(Layer):
         return 0  # Camada sem parâmetros treináveis
 
 
-
-class gru_layer(Layer):
-    def __init__(self, n_units, input_shape=None):
+class GRULayer(Layer):
+    def __init__(self, n_units, input_shape=None, return_sequences=False):
         super().__init__()
         self.n_units = n_units
         self._input_shape = input_shape
+        self.return_sequences = return_sequences
+
+    @property
+    def input_shape(self):
+        if self._input_shape is None:
+            raise ValueError("É necessário definir o input_shape para a camada.")
+        return self._input_shape
 
     def initialize(self, optimizer):
-        # Determina a dimensão de entrada (assume-se que inputs tem shape (batch, seq_len, input_dim))
-        input_dim = self.input_shape()[-1]
-        # Inicialização dos pesos para os 3 componentes da GRU: atualização (z), reset (r) e candidato (h_tilde)
-        self.w_z = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
-        self.u_z = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        """
+        Inicializa os pesos da camada utilizando uma estratégia de inicialização de Xavier.
+        """
+        input_dim = self.input_shape[-1]
+        
+        # Cálculo do limite de Xavier/Glorot para inicialização
+        limit = np.sqrt(6 / (input_dim + self.n_units))
+        
+        # Inicialização para o gate de atualização (z)
+        self.w_z = np.random.uniform(-limit, limit, (input_dim, self.n_units))
+        self.u_z = np.random.uniform(-limit, limit, (self.n_units, self.n_units))
         self.b_z = np.zeros((1, self.n_units))
         
-        self.w_r = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
-        self.u_r = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        # Inicialização para o gate de reset (r)
+        self.w_r = np.random.uniform(-limit, limit, (input_dim, self.n_units))
+        self.u_r = np.random.uniform(-limit, limit, (self.n_units, self.n_units))
         self.b_r = np.zeros((1, self.n_units))
         
-        self.w_h = np.random.randn(input_dim, self.n_units) * np.sqrt(1.0 / input_dim)
-        self.u_h = np.random.randn(self.n_units, self.n_units) * np.sqrt(1.0 / self.n_units)
+        # Inicialização para o estado candidato (h_tilde)
+        self.w_h = np.random.uniform(-limit, limit, (input_dim, self.n_units))
+        self.u_h = np.random.uniform(-limit, limit, (self.n_units, self.n_units))
         self.b_h = np.zeros((1, self.n_units))
         
         # Cria cópias do otimizador para cada conjunto de pesos
@@ -335,43 +349,62 @@ class gru_layer(Layer):
         self.w_h_opt = copy.deepcopy(optimizer)
         self.u_h_opt = copy.deepcopy(optimizer)
         self.b_h_opt = copy.deepcopy(optimizer)
+        
         return self
 
+    @staticmethod
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-np.clip(x, -50, 50)))
+
     def forward_propagation(self, inputs, training=True):
-        # inputs shape: (batch_size, seq_len, input_dim)
         self.inputs = inputs
         batch_size, seq_len, _ = inputs.shape
-        # h_states guarda os estados ocultos; inicia com zeros para h0
+        
+        # h_states guarda os estados ocultos; iniciando com zeros para h0
         self.h_states = np.zeros((batch_size, seq_len + 1, self.n_units))
-        # Guarda os valores dos gates para possível uso na retropropagação
+        
+        # Listas para armazenar os valores dos gates para retropropagação
         self.z_list = []
         self.r_list = []
         self.h_tilde_list = []
+        
         for t in range(seq_len):
             x_t = inputs[:, t, :]
             h_prev = self.h_states[:, t, :]
+            
             # Gate de atualização (z)
-            z_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_z) + np.dot(h_prev, self.u_z) + self.b_z)))
+            z_t = self.sigmoid(np.dot(x_t, self.w_z) + np.dot(h_prev, self.u_z) + self.b_z)
             # Gate de reset (r)
-            r_t = 1 / (1 + np.exp(- (np.dot(x_t, self.w_r) + np.dot(h_prev, self.u_r) + self.b_r)))
-            # Cálculo do estado candidato (h_tilde)
+            r_t = self.sigmoid(np.dot(x_t, self.w_r) + np.dot(h_prev, self.u_r) + self.b_r)
+            # Estado candidato (h_tilde)
             h_tilde = np.tanh(np.dot(x_t, self.w_h) + np.dot(r_t * h_prev, self.u_h) + self.b_h)
             # Atualização do estado oculto
             h_t = (1 - z_t) * h_prev + z_t * h_tilde
+            
             self.h_states[:, t + 1, :] = h_t
             self.z_list.append(z_t)
             self.r_list.append(r_t)
             self.h_tilde_list.append(h_tilde)
-        self.output = self.h_states[:, -1, :]  # saída é o último estado oculto
+        
+        # Se return_sequences=True, retorna a sequência completa; senão, apenas o último estado
+        if self.return_sequences:
+            self.output = self.h_states[:, 1:, :]
+        else:
+            self.output = self.h_states[:, -1, :]
         return self.output
 
     def backward_propagation(self, output_error):
         dx = np.zeros_like(self.inputs)
+        # Implementar retropropagação com cálculos dos gradientes para cada parâmetro.
         return dx
 
     def output_shape(self):
-        # A saída tem dimensão (n_units,)
-        return (self.n_units,)
+        if self.return_sequences:
+            # Retorna a sequência de estados ocultos para cada exemplo: (seq_len, n_units)
+            # Note que a dimensão batch é adicionada no momento da passagem dos dados.
+            return (self.input_shape[1], self.n_units)
+        else:
+            return (self.n_units,)
 
     def parameters(self):
         total_params = (self.w_z.size + self.u_z.size + self.b_z.size +

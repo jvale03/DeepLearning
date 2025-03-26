@@ -19,8 +19,9 @@ class MeanSquaredError(LossFunction):
 
 class BinaryCrossEntropy(LossFunction):
     def loss(self, y_true, y_pred):
-        p = np.clip(y_pred, 1e-15, 1 - 1e-15)
+        p = np.clip(y_pred, 1e-15, 1 - 1e-15)  # Evita log(0)
         return -np.mean(y_true * np.log(p) + (1 - y_true) * np.log(1 - p))
 
     def derivative(self, y_true, y_pred):
-        return y_pred - y_true
+        p = np.clip(y_pred, 1e-15, 1 - 1e-15)  # Evita divisão por zero
+        return (p - y_true) / y_true.shape[0]  # Normaliza pelo batch size

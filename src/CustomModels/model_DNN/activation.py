@@ -28,12 +28,12 @@ class ActivationLayer(Layer, ABC):
 class SigmoidActivation(ActivationLayer):
     def activation_function(self, input):
         input = np.clip(input, -50, 50)  # Evita overflow
-        self.cached_output = 1 / (1 + np.exp(-input))
-        return self.cached_output
+        return 1 / (1 + np.exp(-input))  
 
     def derivative(self, input):
-        return self.cached_output * (1 - self.cached_output)  # Usa cached_output
-
+        output = self.activation_function(input)  # Garante que usa a saída correta
+        return output * (1 - output)
+    
 class ReLUActivation(ActivationLayer):
     def __init__(self, alpha=0.0):
         self.alpha = alpha

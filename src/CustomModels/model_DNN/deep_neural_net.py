@@ -1,7 +1,7 @@
 import numpy as np
 from layers import DenseLayer, EmbeddingLayer, FlattenLayer, DropoutLayer, BatchNormalizationLayer, GlobalAveragePoolingLayer, GlobalAveragePooling1D
 from losses import BinaryCrossEntropy   
-from optimizer import Optimizer
+from optimizer import Optimizer, AdamOptimizer
 from metrics import accuracy
 from data import read_csv
 from tokenizer import SimpleTokenizer
@@ -22,7 +22,7 @@ class DeepNeuralNetwork:
             np.random.seed(self.seed)
         self.epochs = epochs
         self.batch_size = batch_size
-        self.optimizer = Optimizer(learning_rate=learning_rate, momentum=momentum, seed=self.seed)
+        self.optimizer = AdamOptimizer(learning_rate=learning_rate, seed=self.seed)
         self.verbose = verbose
         self.loss = loss()
         self.metric = metric
@@ -134,6 +134,7 @@ class DeepNeuralNetwork:
     def save(self, file_path):
         with open(file_path, 'wb') as f:
             pickle.dump(self, f)
+
         print(f"Modelo salvo em {file_path}")
 
     @staticmethod
