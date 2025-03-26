@@ -18,7 +18,7 @@ class Data:
         self.features = features
         self.label = label
 
-def stratified_split(X, y, train_ratio=0.7, val_ratio=0.15, seed=None):
+def stratified_split(X, y, train_ratio=0.75, val_ratio=0.125, seed=None):
     if seed is not None:
         np.random.seed(seed)
     unique_labels, label_counts = np.unique(y, return_counts=True)
@@ -85,7 +85,6 @@ def read_csv_once(data, tokenizer, sequence_length=128, seed=None):
     texts = data.iloc[:, 0].astype(str).tolist()
     labels = data.iloc[:, 1].astype(np.float32).to_numpy()
     
-    tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
     
     X = np.zeros((len(sequences), sequence_length), dtype=np.int32)
