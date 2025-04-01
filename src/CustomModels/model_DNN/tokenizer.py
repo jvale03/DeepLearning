@@ -3,6 +3,7 @@ import numpy as np
 from collections import Counter
 from itertools import chain
 
+
 class SimpleTokenizer:
     def __init__(self, num_words=None, lower=True, split=" ", seed=None):
         self.num_words = num_words
@@ -131,7 +132,7 @@ class AdvancedTokenizer:
         if self.lower:
             text = text.lower()
 
-        tokens = re.findall(r"\b\w+(?:[-']\w+)?\b", text, re.UNICODE)
+        tokens = re.findall(r"\b[a-zA-Z0-9]+(?:[-'][a-zA-Z0-9]+)?\b|[.,!?;:]", text, re.UNICODE)
 
         # Remove stopwords, se necessário
         if self.remove_stopwords:

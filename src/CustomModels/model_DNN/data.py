@@ -37,7 +37,7 @@ def stratified_split(X, y, train_ratio=0.75, val_ratio=0.125, seed=None):
     
     return np.array(train_idx), np.array(val_idx), np.array(test_idx)
 
-def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.7, val_ratio=0.15, seed=None):
+def read_csv(filename, tokenizer, sequence_length=128, train_ratio=0.8, val_ratio=0.1, seed=None):
     data = pd.read_csv(filename)
     
     if data.shape[1] != 2:
